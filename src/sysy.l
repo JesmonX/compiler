@@ -54,7 +54,8 @@ comments    \/\*([^*]|\*+[^*/])*\*+\/
 ";"             { return ';'; }
 {comment}       { }
 {comments}      { }
-{ident}         { strcpy(yylval.str, yytext); return IDENT; }
+{ident}         { yylval.str_val = new std::string(yytext); return IDENT; }
+
 
 {dec}           { yylval.ival = atoi(yytext); return INT_CONST; }
 {oct}           { yylval.ival = atoi(yytext); return INT_CONST; }

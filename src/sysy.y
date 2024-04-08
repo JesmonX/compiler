@@ -3,20 +3,19 @@
 #include <ast/ast.h>
 void yyerror(const char *s);
 extern int yylex(void);
-extern NodePtr root;
+extern unique_ptr<BaseAST> ast;
 %}
 
 /// types
 %union {
     int ival;
-    ExprPtr expr;
-    OpType op;
-    NodePtr node;
+    BaseAST *node;
     char str[64];
+    std::string *str_val;
 }
 
 %token <ival> INT_CONST
-%token <str> IDENT
+%token <str_val> IDENT
 %token VOID INT
 %token IF ELSE WHILE BREAK CONTINUE RETURN
 %token LTE GTE EQ NEQ
@@ -25,39 +24,80 @@ extern NodePtr root;
 
 %start CompUnit
 
-%type <expr> Exp
-%type <node> CompUnit Unit Decl VarDecl VarDef InitVal FuncDef  FuncFParams FuncFParam
+%type <node> Exp
+%type <node> CompUnit   VarDef  FuncDef  FuncFParams FuncFParam MulVarDef CompUnits Decl
 %type <node> Block BlockItem Stmt LVal PrimaryExp
 %type <node> UnaryExp UnaryOp FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp
 
 
 %%
-CompUnit : Unit
-         | CompUnit Unit
-         ;
+CompUnit
+    : CompUnits{
+        auto comp_unit = make_unique<CompUnitAST>();
+        comp_unit->comp_units = unique_ptr<BaseAST>($1);
+        ast = move(comp_unit);
+    }
+    ;
+CompUnits 
+    : Decl{
+        auto a = new CompUnitsAST();
+        a->def = unique_ptr<BaseAST>($1);
+        a->comp_unit = NULL;
+        $$ = a;
+    }   
+    | CompUnits Decl{
+        auto a = new CompUnitsAST();
+        a->def = unique_ptr<BaseAST>($1);
+        a->comp_unit = unique_ptr<BaseAST>($2);
+        $$ = a;
+    } 
+    ;
+Decl
+    : INT MulVarDef ';'{
+        auto a = new DeclAST();
+        a->func_def = NULL;
+        a->var_def = unique_ptr<BaseAST>($2);
+        $$ = a;
 
-Unit : Decl
-     | FuncDef
-     ;
+    }
+    | FuncDef{
+        auto a = new DeclAST();
+        a->func_def = unique_ptr<BaseAST>($1);
+        a->var_def = NULL;
+        $$ = a;
+    }
+    ;
 
-Decl : VarDecl
-     ;
+MulVarDef 
+    : MulVarDef ',' VarDef{
+        auto a = new MulVarDefAST();
+        a->mul_var_def = unique_ptr<BaseAST>($1);
+        a->var_def = unique_ptr<BaseAST>($3);
+        $$ = a;
+    } 
+    | VarDef{
+        auto a = new MulVarDefAST();
+        a->mul_var_def = NULL;
+        a->var_def = unique_ptr<BaseAST>($1);
+        $$ = a;
+    } 
+    ;
 
-VarDecl : INT VarDef ';'
-        ;
-
-VarDef : IDENT '=' InitVal
-       | IDENT
-       | IDENT VarDefunit
-       | VarDef ',' VarDef
-       ;
+VarDef 
+    : IDENT '=' Exp
+    | IDENT{
+        auto var_def = new VarDefAST();
+        var_def->ident = *($1);
+        var_def->type = 2;
+        $$ = var_def;
+    }
+    | IDENT VarDefunit
+    ;
 
 VarDefunit : '[' INT_CONST ']'
            | VarDefunit '[' INT_CONST ']'
            ;
 
-InitVal : Exp
-        ;
 
 FuncDef : INT IDENT '(' FuncFParams ')' Block
         | VOID IDENT '(' FuncFParams ')' Block
@@ -82,9 +122,9 @@ Block : '{' '}'
       | '{' BlockItem '}'
       ;
 
-BlockItem : Decl
+BlockItem : INT MulVarDef ';'
           | Stmt
-          | BlockItem Decl
+          | BlockItem INT MulVarDef ';'
           | BlockItem Stmt
           ;
 

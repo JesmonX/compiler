@@ -1,68 +1,153 @@
 #pragma once
 #include <cstdint>
+#include <iostream>
 #include <type_traits>
 #include <string>
+#include <memory>
+using namespace std;
 
-enum OpType {
-#define OpcodeDefine(x, s) x,
-#include "common/common.def"
+
+class BaseAST {
+ public:
+  virtual ~BaseAST() = default;
+
+  virtual void Dump() const = 0;
+};
+using ASTPtr = std::unique_ptr<BaseAST>;
+
+
+class FuncDefAST : public BaseAST  {
+public:
+    std::string func_type;
+    std::string ident;
+    ASTPtr func_fparams;
+    ASTPtr block;
+    int type;
+
+    void Dump() const override {
+        std::cout << "FuncDef { ";
+        std::cout << "func_type : "<< func_type;
+        std::cout << ", " << ident << ", ";
+        if(func_fparams!=nullptr)
+            func_fparams->Dump();
+        block->Dump();
+        std::cout << " }";
+  }
 };
 
-enum NodeType {
-#define TreeNodeDefine(x) x,
-#include "common/common.def"
+class VarDefAST  : public BaseAST {
+public:
+
+    int int_const;
+    std::string ident;
+    ASTPtr exp;
+    ASTPtr unit;
+    int type;
+
+    void Dump() const override   {
+        std::cout << "VarDef { ";
+        std::cout << "var_type : "<< "int";
+        std::cout << ", " << ident << ", ";
+        switch (type) {
+            case 1:
+                exp->Dump();
+                break;
+
+            case 3:
+                std::cout << '['<<int_const << "] ";
+                if(unit!=nullptr)
+                    unit->Dump();
+                std::cout << ", ";
+                break;
+            default:
+                break;
+        }
+        std::cout << " }";
+  }
 };
 
-struct Node;
-using NodePtr = Node*;
-struct TreeExpr;
-using ExprPtr = TreeExpr*;
-struct TreeType;
-
-struct Node {
-    NodeType node_type;
-    Node(NodeType type) : node_type(type) {}
-    template <typename T> bool is() {
-        return node_type == std::remove_pointer_t<T>::this_type;
+class DeclAST : public BaseAST {
+public:
+    ASTPtr func_def;
+    ASTPtr var_def;
+    void Dump() const override{
+        if(func_def)
+            func_def->Dump();
+        else 
+            var_def->Dump();
     }
-    template <typename T> T as() {
-        if (is<T>())
-            return static_cast<T>(this);
-        return nullptr;
-    }
-    template <typename T> T as_unchecked() { return static_cast<T>(this); }
 };
 
-
-
-struct TreeExpr : public Node { // TreeExpr : public Node 表示前者继承自后者
-    TreeExpr(NodeType type) : Node(type) {}
-};
-struct TreeBinaryExpr : public TreeExpr {
-    constexpr static NodeType this_type = ND_BinaryExpr;
-    OpType op;
-    ExprPtr lhs, rhs;
-    TreeBinaryExpr(OpType op, ExprPtr lhs, ExprPtr rhs)
-        : TreeExpr(this_type), op(op), lhs(lhs), rhs(rhs) {
+class CompUnitAST : public BaseAST{
+public:
+    ASTPtr comp_units;
+    void Dump() const override{
+        std::cout << "CompUnit { ";
+        comp_units->Dump();
+        
+        std::cout << " }";
     }
 };
 
-struct TreeUnaryExpr : public TreeExpr {
-    constexpr static NodeType this_type = ND_UnaryExpr;
-    OpType op;
-    ExprPtr operand;
-    TreeUnaryExpr(OpType op, ExprPtr operand)
-        : TreeExpr(this_type), op(op), operand(operand) {
+class CompUnitsAST : public BaseAST {
+public:
+    ASTPtr comp_unit;
+    ASTPtr def;
+
+    void Dump() const override{
+        if(comp_unit)
+            comp_unit->Dump();
+        else 
+            def->Dump();
     }
 };
 
-struct TreeIntegerLiteral : public TreeExpr {
-    constexpr static NodeType this_type = ND_IntegerLiteral;
-    int64_t value;
-    TreeIntegerLiteral(int64_t value) : TreeExpr(this_type), value(value) {}
+
+
+
+class MulVarDefAST : public BaseAST  {
+public:
+    ASTPtr mul_var_def;
+    ASTPtr var_def;
+    void Dump() const override{
+        if(mul_var_def)
+            mul_var_def->Dump();
+        else 
+            var_def->Dump();
+    }
 };
 
+class VarDefUnitAST  : public BaseAST {
+public:
+    int int_const;
+    ASTPtr unit;
+    void Dump()    const override{
+        std::cout << '['<<int_const << "] ";
+        if(unit!=nullptr)
+            unit->Dump();
+        std::cout << " }";
+    }
+};
 
+class FuncFParamsAST : public BaseAST  {
+public:
+    ASTPtr param;
+    ASTPtr params;
+    void Dump()   const override {
+        std::cout << "FuncFParams { ";
+        param->Dump();
+        if(params!=nullptr)
+            params->Dump();
+        std::cout << " }";
+    }
+};
 
-/// A possible helper function dipatch based on the type of `TreeExpr`
-void print_expr(ExprPtr exp, std::string prefix = "", std::string ident = "");
+class FuncFParamAST : public BaseAST  {
+public:
+    
+    void Dump()  const override  {
+        std::cout << "FuncFParams { ";
+        
+        std::cout << " }";
+    }
+};
