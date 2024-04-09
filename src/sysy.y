@@ -14,23 +14,22 @@ extern unique_ptr<BaseAST> ast;
     std::string *str_val;
 }
 
+%start CompUnit
+
 %token <ival> INT_CONST
 %token <str_val> IDENT
 %token VOID INT
 %token IF ELSE WHILE BREAK CONTINUE RETURN
-%token LTE GTE EQ NEQ
-%token AND OR
+%token LTE GTE EQ NEQ AND OR
 
-
-%start CompUnit
 %type <ival> UnaryOp
-%type <node> Exp
 %type <node> CompUnit   VarDef  FuncDef  FuncFParams FuncFParam MulVarDef CompUnits Decl VarDefunit
-%type <node> Block BlockItem Stmt LVal PrimaryExp FuncFParamUnit LValunit
-%type <node> UnaryExp  FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp
+%type <node> Block BlockItem Stmt LVal PrimaryExp FuncFParamUnit LValunit FuncRParams
+%type <node> UnaryExp   MulExp AddExp RelExp EqExp LAndExp LOrExp Exp
 
 
 %%
+
 CompUnit
     : CompUnits{
         auto comp_unit = make_unique<CompUnitAST>();
@@ -38,6 +37,7 @@ CompUnit
         ast = move(comp_unit);
     }
     ;
+
 CompUnits 
     : Decl{
         auto a = new CompUnitsAST();
@@ -52,6 +52,7 @@ CompUnits
         $$ = a;
     } 
     ;
+
 Decl
     : INT MulVarDef ';'{
         auto a = new DeclAST();
@@ -209,7 +210,6 @@ FuncFParamUnit
         a->unit = unique_ptr<BaseAST>($4);
         $$ = a;
     }
-    
     ;
 
 Block 
