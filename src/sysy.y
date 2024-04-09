@@ -26,7 +26,7 @@ extern unique_ptr<BaseAST> ast;
 %type <ival> UnaryOp
 %type <node> Exp
 %type <node> CompUnit   VarDef  FuncDef  FuncFParams FuncFParam MulVarDef CompUnits Decl VarDefunit
-%type <node> Block BlockItem Stmt LVal PrimaryExp FuncFParamUnit
+%type <node> Block BlockItem Stmt LVal PrimaryExp FuncFParamUnit LValunit
 %type <node> UnaryExp  FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp
 
 
@@ -324,20 +324,20 @@ Stmt
 Exp 
     : LOrExp{
         auto a = new ExpAST();
-        a->exp = unique_ptr<BaseAST>($1);
+        a->lorexp = unique_ptr<BaseAST>($1);
         $$ = a;
     }
     ;
 
 LVal 
     : IDENT{
-        auto a = new LValAST();
+        auto a = new LvalAST();
         a->ident = *($1);
         a->unit = NULL;
         $$ = a;
     }
     | IDENT LValunit{
-        auto a = new LValAST();
+        auto a = new LvalAST();
         a->ident = *($1);
         a->unit = unique_ptr<BaseAST>($2);
         $$ = a;
@@ -346,13 +346,13 @@ LVal
 
 LValunit 
     : '[' Exp ']'{
-        auto a = new LValUnitAST();
+        auto a = new LvalUnitAST();
         a->exp = unique_ptr<BaseAST>($2);
         a->unit = NULL;
         $$ = a;
     }
     | LValunit '[' Exp ']'{
-        auto a = new LValUnitAST();
+        auto a = new LvalUnitAST();
         a->exp = unique_ptr<BaseAST>($3);
         a->unit = unique_ptr<BaseAST>($1);
         $$ = a;

@@ -159,17 +159,7 @@ public:
     }
 };
 
-class ExpAST : public BaseAST  {
-public:
-    ASTPtr exp;
-    ASTPtr add_exp;
-    void Dump()  const override {
-        if(exp!=NULL)
-            exp->Dump();
-        if(add_exp!=NULL)
-            add_exp->Dump();
-    }
-};
+
 
 class BlockAST : public BaseAST  {
 public:
