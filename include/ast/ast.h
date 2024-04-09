@@ -203,15 +203,298 @@ public:
     ASTPtr exp;
     ASTPtr block;
     ASTPtr stmt;
+    ASTPtr stmt2;//only else stmt
     int type;
     void Dump()  const override {
-    
-    
+        switch (type) {
+            case 1:
+                std::cout << "Assign Stmt:{ ";
+                lval->Dump();
+                std::cout << " = ";
+                exp->Dump();
+                break;
+            case 2:
+                exp->Dump();
+                break;
+            case 3:
+                block->Dump();
+                break;
+            case 4:
+                std::cout << "If Stmt:{ ";
+                std::cout << "condition( ";
+                exp->Dump();
+                std::cout << ") ";
+                std::cout << "then ";
+                stmt->Dump();
+                std::cout << " } ";
+                break;
+            case 5:
+                std::cout << "If Stmt:{ ";
+                std::cout << "condition( ";
+                exp->Dump();
+                std::cout << ") ";
+                std::cout << "then ";
+                stmt->Dump();
+                std::cout << " else:{ ";
+                stmt2->Dump();
+                std::cout << " } ";
+                break;
+            case 6:
+                std::cout << "While Stmt:{ ";
+                std::cout << "condition( ";
+                exp->Dump();
+                std::cout << ") ";
+                stmt->Dump();
+                std::cout << "} ";
+                break;
+            case 7:
+                std::cout << "Break Stmt; ";
+                break;
+            case 8:
+                std::cout << "Continue Stmt; ";
+                break;
+            case 9:
+                std::cout << "Return Stmt: {} ";
+                break;
+            case 10:
+                std::cout << "Return Stmt: { ";
+                exp->Dump();
+                std::cout << "} ";
+                break;
+            default:
+                break;
+        }
+    }
+};
 
-    
-    
-    
-    
-    
+class ExpAST : public BaseAST  {
+public:
+    ASTPtr lorexp;
+    void Dump()  const override {
+        if(lorexp!=NULL)
+            lorexp->Dump();
+    }
+};
+
+class LvalAST : public BaseAST  {
+public:
+    std::string ident;
+    ASTPtr unit;
+    void Dump()  const override {
+        std::cout << "ident: " <<ident <<" ";
+        if(unit!=NULL)
+            unit->Dump();
+
+    }
+};
+
+class LvalUnitAST : public BaseAST  {
+public:
+    ASTPtr exp;
+    ASTPtr unit;
+    void Dump()  const override {
+        if (unit!=NULL)
+            unit->Dump();
+        std::cout << "[";
+        exp->Dump();
+        std::cout << "] ";
+    }
+};
+
+class PrimaryExpAST : public BaseAST  {
+public:
+    int int_const;
+    ASTPtr exp;
+    ASTPtr lval;
+    void Dump()  const override {
+        if(exp!=NULL)
+            exp->Dump();
+        if(lval!=NULL)
+            lval->Dump();
+        if(exp == NULL && lval == NULL)
+            std::cout << "int_const: "<< int_const << " ";
+    }
+};
+
+class UnaryExpAST : public BaseAST  {
+public:
+    ASTPtr primary_exp;
+    ASTPtr unary_exp;
+    ASTPtr params;
+    std::string ident;
+    int op_type;
+    int type;
+    void Dump()  const override {
+        switch (type) {
+            case 1:
+                primary_exp->Dump();
+                break;
+            case 2:
+                std::cout << "ident: "<< ident;
+                break;
+            case 3:
+                std::cout << "ident: "<< ident;
+                std::cout << " FuncRParams: { ";
+                params->Dump();
+                std::cout << " }";
+                break;
+            case 4:
+                std::cout << "UnaryExp: ";
+                switch (op_type){
+                    case 1:
+                        std::cout << "op: + {";
+                        break;
+                    case 2:
+                        std::cout << "op: - { ";
+                        break;
+                    case 3:
+                        std::cout << "op: ! { ";
+                        break;
+                }
+                unary_exp->Dump();
+                std::cout << " }";
+                break;
+        }
+    }
+};
+
+class FuncRParamsAST : public BaseAST  {
+public:
+    ASTPtr exp;
+    ASTPtr params;
+    void Dump()  const override {
+        if(params!=NULL)
+            params->Dump();
+        exp->Dump();
+    }
+};
+
+class MulExpAST : public BaseAST  {
+public:
+    ASTPtr mul_exp;
+    ASTPtr unary_exp;
+    int op_type;
+    void Dump()  const override {
+        if(mul_exp!=NULL){
+            std::cout << "MulExp: ";
+            
+            if(op_type == 1)
+                std::cout << " op: mul { ";
+            else if (op_type == 2)
+                std::cout << " op: div { ";
+            else if (op_type == 3)
+                std::cout << " op: mod { ";
+            mul_exp->Dump();
+            std::cout << " , ";
+            unary_exp->Dump();
+            std::cout << " }";
+        }
+        else 
+            unary_exp->Dump();
+    }
+};
+
+class AddExpAST : public BaseAST  {
+public:
+    ASTPtr add_exp;
+    ASTPtr mul_exp;
+    int op_type;
+    void Dump()  const override {
+        if(add_exp!=NULL){
+            std::cout << "AddExp: ";
+            if(op_type == 1)
+                std::cout << " op: add { ";
+            else if (op_type == 2)
+                std::cout << " op: sub {";
+            add_exp->Dump();
+            std::cout << " , ";
+            mul_exp->Dump();
+            std::cout << " }";
+        }
+        else
+            mul_exp->Dump();
+        
+    }
+};
+
+class RelExpAST : public BaseAST  {
+public:
+    ASTPtr rel_exp;
+    ASTPtr add_exp;
+    int op_type;
+    void Dump()  const override {
+        if(rel_exp!=NULL){
+            std::cout << "RelExp: ";
+            if(op_type == 1)
+                std::cout << " op: < { ";
+            else if (op_type == 2)
+                std::cout << " op: > { ";
+            else if (op_type == 3)
+                std::cout << " op: <= { ";
+            else if (op_type == 4)
+                std::cout << " op: >= { ";
+            rel_exp->Dump();
+            std::cout << " , ";
+            add_exp->Dump();
+            std::cout << " }";
+        }
+        else
+            add_exp->Dump();
+    }
+};
+
+class EqExpAST : public BaseAST  {
+public:
+    ASTPtr eq_exp;
+    ASTPtr rel_exp;
+    int op_type;
+    void Dump()  const override {
+        if(eq_exp!=NULL){
+            std::cout << "EqExp: ";
+            if(op_type == 1)
+                std::cout << " op: == { ";
+            else if (op_type == 2)
+                std::cout << " op: != { ";
+            eq_exp->Dump();
+            std::cout << " , ";
+            rel_exp->Dump();
+            std::cout << " }";
+        }
+        else
+            rel_exp->Dump();
+    }
+};
+
+class LAndExpAST : public BaseAST  {
+public:
+    ASTPtr land_exp;
+    ASTPtr eq_exp;
+    void Dump()  const override {
+        if(land_exp!=NULL){
+            std::cout << "LAndExp: { ";
+            land_exp->Dump();
+            std::cout << " , ";
+            eq_exp->Dump();
+            std::cout << " }";
+        }
+        else
+            eq_exp->Dump();
+    }
+};
+
+class LOrExpAST : public BaseAST  {
+public:
+    ASTPtr lor_exp;
+    ASTPtr land_exp;
+    void Dump()  const override {
+        if(lor_exp!=NULL){
+            std::cout << "LOrExp: { ";
+            lor_exp->Dump();
+            std::cout << " , ";
+            land_exp->Dump();
+            std::cout << " }";
+        }
+        else
+            land_exp->Dump();
     }
 };

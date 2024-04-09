@@ -10,7 +10,7 @@ unique_ptr<BaseAST> ast;
 int main(int argc, char **argv) {
 
     yyin = fopen(argv[1],"r");//argc == 2
-    
+    //return yyparse();
     int ret = yyparse();
     ast->Dump();
     return ret;

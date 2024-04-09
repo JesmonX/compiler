@@ -23,11 +23,11 @@ extern unique_ptr<BaseAST> ast;
 
 
 %start CompUnit
-
+%type <ival> UnaryOp
 %type <node> Exp
-%type <node> CompUnit   VarDef  FuncDef  FuncFParams FuncFParam MulVarDef CompUnits Decl
-%type <node> Block BlockItem Stmt LVal PrimaryExp
-%type <node> UnaryExp UnaryOp FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp
+%type <node> CompUnit   VarDef  FuncDef  FuncFParams FuncFParam MulVarDef CompUnits Decl VarDefunit
+%type <node> Block BlockItem Stmt LVal PrimaryExp FuncFParamUnit
+%type <node> UnaryExp  FuncRParams MulExp AddExp RelExp EqExp LAndExp LOrExp
 
 
 %%
@@ -98,11 +98,11 @@ VarDef
         $$ = var_def;
     }
     | IDENT VarDefunit{
-        auto var_def = new VarDefAST();
-        var_def->ident = *($1);
-        var_def->type = 3;
-        var_def->unit = unique_ptr<BaseAST>($2);
-        $$ = var_def;
+        auto a = new VarDefAST();
+        a->ident = *($1);
+        a->type = 3;
+        a->unit = unique_ptr<BaseAST>($2);
+        $$ = a;
     }
     ;
 
@@ -113,10 +113,10 @@ VarDefunit
         var_def_unit->unit = NULL;
         $$ = var_def_unit;
     }
-    |  '[' INT_CONST ']' VarDefunit{
+    |  '[' INT_CONST ']' VarDefunit {
         auto var_def_unit = new ConstUnitAST();
-        var_def_unit->int_const = $3;
-        var_def_unit->unit = unique_ptr<BaseAST>($1);
+        var_def_unit->int_const = $2;
+        var_def_unit->unit = unique_ptr<BaseAST>($4);
         $$ = var_def_unit;
     }
     ;
@@ -127,7 +127,7 @@ FuncDef
         auto func_def = new FuncDefAST();
         func_def->ident = *($2);
         func_def->func_type = "int";
-        func_def->func_f_params = unique_ptr<BaseAST>($4);
+        func_def->func_fparams = unique_ptr<BaseAST>($4);
         func_def->block = unique_ptr<BaseAST>($6);
         $$ = func_def;
     }
@@ -135,7 +135,7 @@ FuncDef
         auto func_def = new FuncDefAST();
         func_def->ident = *($2);
         func_def->func_type = "void";
-        func_def->func_f_params = unique_ptr<BaseAST>($4);
+        func_def->func_fparams = unique_ptr<BaseAST>($4);
         func_def->block = unique_ptr<BaseAST>($6);
         $$ = func_def;
     }
@@ -143,7 +143,7 @@ FuncDef
         auto func_def = new FuncDefAST();
         func_def->ident = *($2);
         func_def->func_type = "int";
-        func_def->func_f_params = NULL;
+        func_def->func_fparams = NULL;
         func_def->block = unique_ptr<BaseAST>($5);
         $$ = func_def;
     }
@@ -151,7 +151,7 @@ FuncDef
         auto func_def = new FuncDefAST();
         func_def->ident = *($2);
         func_def->func_type = "void";
-        func_def->func_f_params = NULL;
+        func_def->func_fparams = NULL;
         func_def->block = unique_ptr<BaseAST>($5);
         $$ = func_def;
     }
@@ -160,14 +160,14 @@ FuncDef
 FuncFParams 
     : FuncFParam{
         auto func_f_params = new FuncFParamsAST();
-        func_f_params->func_f_param = unique_ptr<BaseAST>($1);
-        func_f_params->func_f_params = NULL;
+        func_f_params->param = unique_ptr<BaseAST>($1);
+        func_f_params->params = NULL;
         $$ = func_f_params;
     }
     | FuncFParams ',' FuncFParam{
         auto func_f_params = new FuncFParamsAST();
-        func_f_params->func_f_param = unique_ptr<BaseAST>($3);
-        func_f_params->func_f_params = unique_ptr<BaseAST>($1);
+        func_f_params->param = unique_ptr<BaseAST>($3);
+        func_f_params->params = unique_ptr<BaseAST>($1);
         $$ = func_f_params;
     }
     ;
@@ -177,21 +177,21 @@ FuncFParam
         auto func_f_param = new FuncFParamAST();
         func_f_param->ident = *($2);
         func_f_param->type = 0;
-        func_f_param->func_f_param_unit = NULL;
+        func_f_param->unit = NULL;
         $$ = func_f_param;
     }
     | INT IDENT '[' ']'{
         auto func_f_param = new FuncFParamAST();
         func_f_param->ident = *($2);
         func_f_param->type = 1;
-        func_f_param->func_f_param_unit = NULL;
+        func_f_param->unit = NULL;
         $$ = func_f_param;
     }
     | INT IDENT '[' ']' FuncFParamUnit{
         auto func_f_param = new FuncFParamAST();
         func_f_param->ident = *($2);
         func_f_param->type = 1;
-        func_f_param->func_f_param_unit = unique_ptr<BaseAST>($5);
+        func_f_param->unit = unique_ptr<BaseAST>($5);
         $$ = func_f_param;
     }
     ;
@@ -205,8 +205,8 @@ FuncFParamUnit
     }
     |  '[' INT_CONST ']' FuncFParamUnit{
         auto a = new ConstUnitAST();
-        a->int_const = $3;
-        a->unit = unique_ptr<BaseAST>($1);
+        a->int_const = $2;
+        a->unit = unique_ptr<BaseAST>($4);
         $$ = a;
     }
     
@@ -256,79 +256,329 @@ BlockItem
     }
     ;
 
-Stmt : LVal '=' Exp ';'
-     | Exp ';'
-     | Block
-     | IF '(' Exp ')' Stmt
-     | IF '(' Exp ')' Stmt ELSE Stmt
-     | WHILE '(' Exp ')' Stmt
-     | BREAK ';'
-     | CONTINUE ';'
-     | RETURN ';'
-     | RETURN Exp ';'
-     ;
-
-Exp : LOrExp
+Stmt 
+    : LVal '=' Exp ';'{
+        auto a = new StmtAST();
+        a->lval = unique_ptr<BaseAST>($1);
+        a->exp = unique_ptr<BaseAST>($3);
+        a->type = 1;
+        $$ = a;
+    }
+    | Exp ';'{
+        auto a = new StmtAST();
+        a->exp = unique_ptr<BaseAST>($1);
+        a->type = 2;
+        $$ = a;
+    }
+    | Block{
+        auto a = new StmtAST();
+        a->block = unique_ptr<BaseAST>($1);
+        a->type = 3;
+        $$ = a;
+    }
+    | IF '(' Exp ')' Stmt{
+        auto a = new StmtAST();
+        a->exp = unique_ptr<BaseAST>($3);
+        a->stmt = unique_ptr<BaseAST>($5);
+        a->type = 4;
+        $$ = a;
+    }
+    | IF '(' Exp ')' Stmt ELSE Stmt{
+        auto a = new StmtAST();
+        a->exp = unique_ptr<BaseAST>($3);
+        a->stmt = unique_ptr<BaseAST>($5);
+        a->type = 5;
+        a->stmt2 = unique_ptr<BaseAST>($7);
+        $$ = a;
+    }
+    | WHILE '(' Exp ')' Stmt{
+        auto a = new StmtAST();
+        a->exp = unique_ptr<BaseAST>($3);
+        a->stmt = unique_ptr<BaseAST>($5);
+        a->type = 6;
+        $$ = a;
+    }
+    | BREAK ';'{
+        auto a = new StmtAST();
+        a->type = 7;
+        $$ = a;
+    }
+    | CONTINUE ';'{
+        auto a = new StmtAST();
+        a->type = 8;
+        $$ = a;
+    }
+    | RETURN ';'{
+        auto a = new StmtAST();
+        a->type = 9;
+        $$ = a;
+    }
+    | RETURN Exp ';'{
+        auto a = new StmtAST();
+        a->exp = unique_ptr<BaseAST>($2);
+        a->type = 10;
+        $$ = a;
+    }
     ;
 
-LVal : IDENT
-     | IDENT LValunit
-     ;
+Exp 
+    : LOrExp{
+        auto a = new ExpAST();
+        a->exp = unique_ptr<BaseAST>($1);
+        $$ = a;
+    }
+    ;
 
-LValunit : '[' Exp ']'
-         | LValunit '[' Exp ']'
-         ;
+LVal 
+    : IDENT{
+        auto a = new LValAST();
+        a->ident = *($1);
+        a->unit = NULL;
+        $$ = a;
+    }
+    | IDENT LValunit{
+        auto a = new LValAST();
+        a->ident = *($1);
+        a->unit = unique_ptr<BaseAST>($2);
+        $$ = a;
+    }
+    ;
 
-PrimaryExp : '(' Exp ')'
-           | LVal
-           | INT_CONST
-           ;
+LValunit 
+    : '[' Exp ']'{
+        auto a = new LValUnitAST();
+        a->exp = unique_ptr<BaseAST>($2);
+        a->unit = NULL;
+        $$ = a;
+    }
+    | LValunit '[' Exp ']'{
+        auto a = new LValUnitAST();
+        a->exp = unique_ptr<BaseAST>($3);
+        a->unit = unique_ptr<BaseAST>($1);
+        $$ = a;
+    }
+    ;
 
-UnaryExp : PrimaryExp
-         | IDENT '(' ')'
-         | IDENT '(' FuncRParams ')'
-         | UnaryOp UnaryExp
-         ;
+PrimaryExp 
+    : '(' Exp ')'{
+        auto a = new PrimaryExpAST();
+        a->exp = unique_ptr<BaseAST>($2);
+        a->lval = NULL;
+        $$ = a;
+    }
+    | LVal{
+        auto a = new PrimaryExpAST();
+        a->lval = unique_ptr<BaseAST>($1);
+        a->exp = NULL;
+        $$ = a;
+    }
+    | INT_CONST{
+        auto a = new PrimaryExpAST();
+        a->int_const = $1;
+        a->lval = NULL;
+        a->exp = NULL;
+        $$ = a;
+    }
+    ;
 
-UnaryOp : '+'
-        | '-'
-        | '!'
-        ;
+UnaryExp 
+    : PrimaryExp{
+        auto a = new UnaryExpAST();
+        a->primary_exp = unique_ptr<BaseAST>($1);
+        a->type = 1;
+        $$ = a;
+    }
+    | IDENT '(' ')'{
+        auto a = new UnaryExpAST();
+        a->ident = *($1);
+        a->type = 2;
+        $$ = a;
+    }
+    | IDENT '(' FuncRParams ')'{
+        auto a = new UnaryExpAST();
+        a->ident = *($1);
+        a->params = unique_ptr<BaseAST>($3);
+        a->type = 3;
+        $$ = a;
+    }
+    | UnaryOp UnaryExp{
+        auto a = new UnaryExpAST();
+        a->op_type = $1;
+        a->unary_exp = unique_ptr<BaseAST>($2);
+        a->type = 4;
+        $$ = a;
+    }
+    ;
 
-FuncRParams : Exp
-            | FuncRParams ',' Exp
-            ;
+UnaryOp 
+    : '+'{
+        $$ = 1;
+    }
+    | '-'{
+        $$ = 2;
+    }
+    | '!'{
+        $$ = 3;
+    }
+    ;
 
-MulExp : UnaryExp
-       | MulExp '*' UnaryExp
-       | MulExp '/' UnaryExp
-       | MulExp '%' UnaryExp
-       ;
+FuncRParams 
+    : Exp{
+        auto a = new FuncRParamsAST();
+        a->exp = unique_ptr<BaseAST>($1);
+        a->params = NULL;
+        $$ = a;
+    }
+    | FuncRParams ',' Exp{
+        auto a = new FuncRParamsAST();
+        a->exp = unique_ptr<BaseAST>($3);
+        a->params = unique_ptr<BaseAST>($1);
+        $$ = a;
+    }
+    ;
 
-AddExp : MulExp
-       | AddExp '+' MulExp
-       | AddExp '-' MulExp
-       ;
+MulExp 
+    : UnaryExp{
+        auto a = new MulExpAST();
+        a->unary_exp = unique_ptr<BaseAST>($1);
+        a->mul_exp = NULL;
+        $$ = a;
+    }
+    | MulExp '*' UnaryExp{
+        auto a = new MulExpAST();
+        a->unary_exp = unique_ptr<BaseAST>($3);
+        a->mul_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 1;
+        $$ = a;
+    }
+    | MulExp '/' UnaryExp{
+        auto a = new MulExpAST();
+        a->unary_exp = unique_ptr<BaseAST>($3);
+        a->mul_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 2;
+        $$ = a;
+    }
+    | MulExp '%' UnaryExp{
+        auto a = new MulExpAST();
+        a->unary_exp = unique_ptr<BaseAST>($3);
+        a->mul_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 3;
+        $$ = a;
+    }
+    ;
 
-RelExp : AddExp
-       | RelExp '<' AddExp
-       | RelExp '>' AddExp
-       | RelExp LTE AddExp
-       | RelExp GTE AddExp
-       ;
+AddExp 
+    : MulExp{
+        auto a = new AddExpAST();
+        a->mul_exp = unique_ptr<BaseAST>($1);
+        a->add_exp = NULL;
+        $$ = a;
+    }
+    | AddExp '+' MulExp{
+        auto a = new AddExpAST();
+        a->mul_exp = unique_ptr<BaseAST>($3);
+        a->add_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 1;
+        $$ = a;
+    }
+    | AddExp '-' MulExp{
+        auto a = new AddExpAST();
+        a->mul_exp = unique_ptr<BaseAST>($3);
+        a->add_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 2;
+        $$ = a;
+    }
+    ;
 
-EqExp : RelExp
-      | EqExp EQ RelExp
-      | EqExp NEQ RelExp
-      ;
+RelExp 
+    : AddExp{
+        auto a = new RelExpAST();
+        a->add_exp = unique_ptr<BaseAST>($1);
+        a->rel_exp = NULL;
+        $$ = a;
+    }
+    | RelExp '<' AddExp{
+        auto a = new RelExpAST();
+        a->add_exp = unique_ptr<BaseAST>($3);
+        a->rel_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 1;
+        $$ = a;
+    }
+    | RelExp '>' AddExp{
+        auto a = new RelExpAST();
+        a->add_exp = unique_ptr<BaseAST>($3);
+        a->rel_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 2;
+        $$ = a;
+    }
+    | RelExp LTE AddExp{
+        auto a = new RelExpAST();
+        a->add_exp = unique_ptr<BaseAST>($3);
+        a->rel_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 3;
+        $$ = a;
+    }
+    | RelExp GTE AddExp{
+        auto a = new RelExpAST();
+        a->add_exp = unique_ptr<BaseAST>($3);
+        a->rel_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 4;
+        $$ = a;
+    }
+    ;
 
-LAndExp : EqExp
-        | LAndExp AND EqExp
-        ;
+EqExp 
+    : RelExp{
+        auto a = new EqExpAST();
+        a->rel_exp = unique_ptr<BaseAST>($1);
+        a->eq_exp = NULL;
+        $$ = a;
+    }
+    | EqExp EQ RelExp{
+        auto a = new EqExpAST();
+        a->rel_exp = unique_ptr<BaseAST>($3);
+        a->eq_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 1;
+        $$ = a;
+    }
+    | EqExp NEQ RelExp{
+        auto a = new EqExpAST();
+        a->rel_exp = unique_ptr<BaseAST>($3);
+        a->eq_exp = unique_ptr<BaseAST>($1);
+        a->op_type = 2;
+        $$ = a;
+    }
+    ;
 
-LOrExp : LAndExp
-       | LOrExp OR LAndExp
-       ;
+LAndExp 
+    : EqExp{
+        auto a = new LAndExpAST();
+        a->eq_exp = unique_ptr<BaseAST>($1);
+        a->land_exp = NULL;
+        $$ = a;
+    }
+    | LAndExp AND EqExp{
+        auto a = new LAndExpAST();
+        a->eq_exp = unique_ptr<BaseAST>($3);
+        a->land_exp = unique_ptr<BaseAST>($1);
+        $$ = a;
+    }
+    ;
+
+LOrExp 
+    : LAndExp{
+        auto a = new LOrExpAST();
+        a->land_exp = unique_ptr<BaseAST>($1);
+        a->lor_exp = NULL;
+        $$ = a;
+    }
+    | LOrExp OR LAndExp{
+        auto a = new LOrExpAST();
+        a->land_exp = unique_ptr<BaseAST>($3);
+        a->lor_exp = unique_ptr<BaseAST>($1);
+        $$ = a;
+    }
+    ;
 
 
 
