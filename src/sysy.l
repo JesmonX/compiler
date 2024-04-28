@@ -7,8 +7,8 @@
 #include "sysy.tab.hh"
 %}
 
-dec         [1-9][0-9]*
 blank       [ \t\n]
+dec         [1-9][0-9]*
 oct         0[0-7]*   
 hex         0(x|X)[0-9a-fA-F]*
 ident       [_a-zA-Z][_a-zA-Z0-9]*
