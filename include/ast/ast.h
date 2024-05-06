@@ -6,6 +6,7 @@
 #include <memory>
 using namespace std;
 #define ENDL std::cout<<endl<<prefix(this->level) 
+#define PF std::cout<<prefix(this->level-1)
 #define PFX std::cout<<prefix(this->level)
 #define PFXX std::cout<<prefix(this->level+1)
 std::string prefix(int level);
@@ -72,8 +73,8 @@ public:
             case 3:
                 PFXX;
                 std::cout << "/array"<<endl;
-                PFXX;
-                std::cout << "int_const: "<<int_const<<endl;
+                //PFXX;
+                //std::cout << "int_const: "<<int_const<<endl;
                 if(unit!=NULL){
                     unit ->level = this->level;
                     unit->Dump();
@@ -127,13 +128,14 @@ public:
     ASTPtr def;
 
     void Dump() const override{
-        if(comp_unit){
-            comp_unit->level = this->level;
-            comp_unit->Dump();
-        }
+        
         if(def) {
             def->level = this->level;
             def->Dump();
+        }
+        if(comp_unit){
+            comp_unit->level = this->level;
+            comp_unit->Dump();
         }
     }
 };
@@ -263,7 +265,7 @@ public:
                 std::cout <<"}"<<endl;
                 break;
             case 2:
-                exp->level = this->level + 1;
+                exp->level = this->level;
                 exp->Dump();
                 break;
             case 3:
@@ -445,12 +447,16 @@ public:
                 break;
             case 3:
                 PFX;
+                std::cout << "FuncCall {"<<endl;
+                PFXX;
                 std::cout << "ident: "<< ident<<endl;
-                PFX;
+                PFXX;
                 std::cout << "FuncRParams: { "<<endl;
                  
                 params->level = this->level + 1;
                 params->Dump();
+                PFXX;
+                std::cout <<"}"<<endl;
                 PFX;
                 std::cout <<"}"<<endl;
                  
@@ -491,7 +497,7 @@ public:
             params->level = this->level;
             params->Dump();
         }
-        exp->level = this->level;
+        exp->level = this->level+1;
         exp->Dump();
     }
 };
