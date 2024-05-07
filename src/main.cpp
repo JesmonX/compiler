@@ -1,5 +1,4 @@
 #include "ast/ast.h"
-
 #include <fmt/core.h>
 #include <stdio.h>
 using namespace std;
@@ -9,12 +8,23 @@ unique_ptr<BaseAST> ast;
 
 int main(int argc, char **argv) {
 
+    if(argc < 2){
+        fmt::print("Usage: {} <filename>\n", argv[0]);
+        return 1;
+    }
+    else if (argc > 2){
+        fmt::print("Too many arguments\n");
+        return 1;
+    }
+
     yyin = fopen(argv[1],"r");//argc == 2
-    //return yyparse();
+    if (!yyin) {
+        fmt::print("Error: cannot open file '{}'\n", argv[1]);
+        return 1;
+    }
+
     int ret = yyparse();
     ast->Dump();
     return ret;
-    //print_expr(static_cast<ExprPtr>(root));
-    //fmt::print("Hello, World!\n");
 
 }
