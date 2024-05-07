@@ -8,8 +8,6 @@ std::string prefix(int level)
 {
     std::string s;
     for (int i = 0; i < level; i++)
-    {
         s += "    ";
-    }
     return s;
 }

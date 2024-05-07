@@ -5,8 +5,6 @@
 #include <string>
 #include <memory>
 using namespace std;
-#define ENDL std::cout<<endl<<prefix(this->level) 
-#define PF std::cout<<prefix(this->level-1)
 #define PFX std::cout<<prefix(this->level)
 #define PFXX std::cout<<prefix(this->level+1)
 std::string prefix(int level);
