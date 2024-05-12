@@ -3,6 +3,9 @@
 #include <ast/ast.h>
 void yyerror(const char *s);
 extern int yylex(void);
+using std::unique_ptr;
+using std::make_unique;
+using std::move;
 extern unique_ptr<BaseAST> ast;
 %}
 

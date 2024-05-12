@@ -113,6 +113,7 @@ def summary(test_results: list[TestResult]):
         # align the filename
         print(f"{test_result.test.filename.ljust(max_filename)}  ", end="")
         print(f"{green('PASSED') if test_result.passed else red('FAILED')}")
+        # print(test_result.output, end="")
     passed = len([test for test in test_results if test.passed])
     print()
     if passed == len(test_results):

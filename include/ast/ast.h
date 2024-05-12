@@ -4,7 +4,7 @@
 #include <type_traits>
 #include <string>
 #include <memory>
-using namespace std;
+
 #define PFX std::cout<<prefix(this->level)
 #define PFXX std::cout<<prefix(this->level+1)
 std::string prefix(int level);
@@ -17,7 +17,7 @@ public:
 using ASTPtr = std::unique_ptr<BaseAST>;
 
 
-class FuncDefAST : public BaseAST  {
+class FuncDefAST : public BaseAST {
 public:
     std::string func_type;
     std::string ident;
@@ -26,28 +26,27 @@ public:
 
     void Dump() const override {
         PFX;
-        std::cout << "FuncDef { "<<endl;
+        std::cout << "FuncDef { "<<std::endl;
         PFXX;
-        std::cout << "func_type : "<< func_type<<endl;
+        std::cout << "func_type : "<< func_type<<std::endl;
         PFXX;
-        std::cout << "ident : "<< ident<<endl;
+        std::cout << "ident : "<< ident<<std::endl;
         if(func_fparams!=NULL){
             func_fparams->level = this->level + 1;
             PFXX;
-            std::cout <<"FuncFParams { "<<endl;
+            std::cout <<"FuncFParams { "<<std::endl;
             func_fparams->Dump();
             PFXX;
-            std::cout <<"}"<<endl;
+            std::cout <<"}"<<std::endl;
         }
         block->level = this->level + 1;
         block->Dump();
         PFX;
-        std::cout << "}"<<endl;
-         
+        std::cout << "}"<<std::endl;
   }
 };
 
-class VarDefAST  : public BaseAST {
+class VarDefAST : public BaseAST {
 public:
 
     int int_const;
@@ -56,13 +55,13 @@ public:
     ASTPtr unit;
     int type;
 
-    void Dump() const override   {
+    void Dump() const override {
         PFX;
-        std::cout <<"VarDef { "<<endl;
+        std::cout <<"VarDef { "<<std::endl;
         PFXX;
-        std::cout <<"var_type : "<< "int"<<endl;
+        std::cout <<"var_type : "<< "int"<<std::endl;
         PFXX;
-        std::cout << "ident : "<< ident<<endl;
+        std::cout << "ident : "<< ident<<std::endl;
         switch (type) {
             case 1:
                 exp->level = this->level+1;
@@ -70,21 +69,21 @@ public:
                 break;
             case 3:
                 PFXX;
-                std::cout << "/array"<<endl;
+                std::cout << "/array"<<std::endl;
                 //PFXX;
-                //std::cout << "int_const: "<<int_const<<endl;
+                //std::cout << "int_const: "<<int_const<<std::endl;
                 if(unit!=NULL){
                     unit ->level = this->level;
                     unit->Dump();
                 }
                 PFXX;
-                std::cout << "array/"<<endl;
+                std::cout << "array/"<<std::endl;
                 break;
             default:
                 break;
         }
         PFX;
-        std::cout <<"}"<<endl;
+        std::cout <<"}"<<std::endl;
     }
 };
 
@@ -92,7 +91,7 @@ class DeclAST : public BaseAST {
 public:
     ASTPtr func_def;
     ASTPtr var_def;
-    void Dump() const override{  
+    void Dump() const override {  
         if(func_def){
             func_def->level = this->level;
             func_def->Dump();
@@ -104,18 +103,18 @@ public:
     }
 };
 
-class CompUnitAST : public BaseAST{
+class CompUnitAST : public BaseAST {
 public:
     ASTPtr comp_units;
 
-    void Dump() const override{
+    void Dump() const override {
         PFX;
-        std::cout <<"CompUnit {"<<endl;
+        std::cout <<"CompUnit {"<<std::endl;
          
         comp_units->level = this->level + 1;
         comp_units->Dump();
         PFX;
-        std::cout <<"}"<<endl;
+        std::cout <<"}"<<std::endl;
          
     }
 };
@@ -125,7 +124,7 @@ public:
     ASTPtr comp_unit;
     ASTPtr def;
 
-    void Dump() const override{
+    void Dump() const override {
         
         if(def) {
             def->level = this->level;
@@ -143,7 +142,7 @@ class MulVarDefAST : public BaseAST  {
 public:
     ASTPtr mul_var_def;
     ASTPtr var_def;
-    void Dump() const override{
+    void Dump() const override {
         if(mul_var_def){
             mul_var_def->level = this->level;
             mul_var_def->Dump();
@@ -155,13 +154,13 @@ public:
     }
 };
 
-class ConstUnitAST  : public BaseAST {
+class ConstUnitAST : public BaseAST {
 public:
     int int_const;
     ASTPtr unit;
-    void Dump()    const override{
+    void Dump() const override {
         PFXX;
-        std::cout << "int_const: "<<int_const<<endl;
+        std::cout << "int_const: "<<int_const<<std::endl;
         if(unit!=nullptr){
             unit->level = this->level;
             unit->Dump();
@@ -170,11 +169,11 @@ public:
     }
 };
 
-class FuncFParamsAST : public BaseAST  {
+class FuncFParamsAST : public BaseAST {
 public:
     ASTPtr param;
     ASTPtr params;
-    void Dump()   const override {
+    void Dump() const override {
         param->level = this->level;
         param->Dump();
         if(params!=NULL){
@@ -184,49 +183,53 @@ public:
     }
 };
 
-class FuncFParamAST : public BaseAST  {
+class FuncFParamAST : public BaseAST {
 public:
     std::string ident;
     std::string param_type = "int";
     ASTPtr unit;
     int type;
-    void Dump()  const override  {
+    void Dump() const override {
         PFXX;
         std::cout << "ident : "<<ident<<" ";
         std::cout << "param_type : "<< param_type;
         if(type == 1)
             std::cout <<"[]";
-        std::cout<<endl;
+        std::cout<<std::endl;
+        PFXX;
+        std::cout<<"/array"<<std::endl;
         if(unit!=NULL){
             unit->level = this->level;
             unit->Dump();
         }
+        PFXX;
+        std::cout<<"array/"<<std::endl;
     }
 };
 
 
 
-class BlockAST : public BaseAST  {
+class BlockAST : public BaseAST {
 public:
     ASTPtr item;
-    void Dump()  const override {
+    void Dump() const override {
         PFX;
-        std::cout <<"Block { "<<endl;
+        std::cout <<"Block { "<<std::endl;
         if(item!=NULL){
             item->level = this->level + 1;
             item->Dump();
         }
         PFX;
-        std::cout << "}"<<endl;
+        std::cout << "}"<<std::endl;
     }
 };
 
-class BlockItemAST : public BaseAST  {
+class BlockItemAST : public BaseAST {
 public:
     ASTPtr block_item;
     ASTPtr mul_var_def;
     ASTPtr stmt;
-    void Dump()  const override {
+    void Dump() const override {
         if(block_item!=NULL){
             block_item->level = this->level;
             block_item->Dump();
@@ -242,7 +245,7 @@ public:
     }
 };
 
-class StmtAST : public BaseAST  {
+class StmtAST : public BaseAST {
 public:
     ASTPtr lval;
     ASTPtr exp;
@@ -250,17 +253,17 @@ public:
     ASTPtr stmt;
     ASTPtr stmt2;//only else stmt
     int type;
-    void Dump()  const override {
+    void Dump() const override {
         switch (type) {
             case 1:
                 PFX;
-                std::cout <<"Assign Stmt{ "<<endl;
+                std::cout <<"Assign Stmt{ "<<std::endl;
                 lval->level = this->level + 1;
                 lval->Dump();
                 exp->level = this->level + 1;
                 exp->Dump();
                 PFX;   
-                std::cout <<"}"<<endl;
+                std::cout <<"}"<<std::endl;
                 break;
             case 2:
                 exp->level = this->level;
@@ -272,79 +275,79 @@ public:
                 break;
             case 4:
                 PFX;
-                std::cout << "If Stmt:{ "<<endl;
+                std::cout << "If Stmt:{ "<<std::endl;
                 PFX;
-                std::cout << "condition( "<<endl;
+                std::cout << "condition( "<<std::endl;
                 exp->level = this->level + 1;
                 exp->Dump();
                 PFX;
-                std::cout << ") "<<endl;
+                std::cout << ") "<<std::endl;
                 PFX;
-                std::cout << "then("<<endl;
+                std::cout << "then("<<std::endl;
                 stmt->level = this->level+1;
-                //std::cout << "debug"<<endl;
+                //std::cout << "debug"<<std::endl;
                 stmt->Dump();
                 PFX;
-                std::cout << ") "<<endl;
+                std::cout << ") "<<std::endl;
                 PFX;
-                std::cout << "}"<<endl;
+                std::cout << "}"<<std::endl;
                 break;
             case 5:
                 PFX;
-                std::cout << "If Stmt{ "<<endl;
+                std::cout << "If Stmt{ "<<std::endl;
                 PFX;
-                std::cout << "condition( "<<endl;
+                std::cout << "condition( "<<std::endl;
                 exp->level = this->level + 1;
                 exp->Dump();
                 PFX;
-                std::cout << ") "<<endl;
+                std::cout << ") "<<std::endl;
                 PFX;
-                std::cout << "then("<<endl;
+                std::cout << "then("<<std::endl;
                 stmt->level = this->level + 1;
                 stmt->Dump();
                 PFX;
-                std::cout << ") "<<endl;
+                std::cout << ") "<<std::endl;
                 PFX;
-                std::cout << "else{ "<<endl;
+                std::cout << "else{ "<<std::endl;
                 stmt2->level = this->level + 1;
                 stmt2->Dump();
                 PFX;
-                std::cout <<"}"<<endl;
+                std::cout <<"}"<<std::endl;
                 break;
             case 6:
                 PFX;
-                std::cout << "While Stmt:{ "<<endl;
+                std::cout << "While Stmt:{ "<<std::endl;
                 PFX;
-                std::cout << "condition( "<<endl;
+                std::cout << "condition( "<<std::endl;
                 exp->level = this->level + 1;
                 exp->Dump();
                 PFX;
-                std::cout << ")"<<endl;
+                std::cout << ")"<<std::endl;
                 stmt->level = this->level + 1;
                 stmt->Dump();
                 PFX;
-                std::cout <<"}"<<endl;
+                std::cout <<"}"<<std::endl;
                 break;
             case 7:
                 PFX;
-                std::cout << "Break Stmt"<<endl;
+                std::cout << "Break Stmt"<<std::endl;
                 break;
             case 8:
                 PFX;
-                std::cout << "Continue Stmt"<<endl;
+                std::cout << "Continue Stmt"<<std::endl;
                  
                 break;
             case 9:
                 PFX;
-                std::cout << "Return Stmt: {}"<<endl;
+                std::cout << "Return Stmt: {}"<<std::endl;
                 break;
             case 10:
                 PFX;
-                std::cout << "Return Stmt: { "<<endl;
+                std::cout << "Return Stmt: { "<<std::endl;
                 exp->level = this->level + 1;
                 exp->Dump();
                 PFX;
-                std::cout << "} "<<endl;
+                std::cout << "} "<<std::endl;
                 break;
             default:
                 break;
@@ -352,10 +355,10 @@ public:
     }
 };
 
-class ExpAST : public BaseAST  {
+class ExpAST : public BaseAST {
 public:
     ASTPtr lorexp;
-    void Dump()  const override {
+    void Dump() const override {
         if(lorexp!=NULL){
             lorexp->level = this->level;
             lorexp->Dump();
@@ -363,47 +366,46 @@ public:
     }
 };
 
-class LvalAST : public BaseAST  {
+class LvalAST : public BaseAST {
 public:
     std::string ident;
     ASTPtr unit;
-    void Dump()  const override {
+    void Dump() const override {
         PFX;
-        std::cout << "ident: "<<ident<<" "<<endl;
+        std::cout << "ident: "<<ident<<" "<<std::endl;
         if(unit!=NULL){
             PFX;
-            std::cout << "/array"<<endl;
+            std::cout << "/array"<<std::endl;
             unit->level = this->level;
             unit->Dump();
             PFX;
-            std::cout << "array/"<<endl;
+            std::cout << "array/"<<std::endl;
         }
 
     }
 };
 
-class LvalUnitAST : public BaseAST  {
+class LvalUnitAST : public BaseAST {
 public:
     ASTPtr exp;
     ASTPtr unit;
-    void Dump()  const override {
+    void Dump() const override {
         if (unit!=NULL){
             unit->level = this->level;
             unit->Dump();
         }
-    
         exp->level = this->level;
         exp->Dump();
     }
 };
 
-class PrimaryExpAST : public BaseAST  {
+class PrimaryExpAST : public BaseAST {
 public:
     int int_const;
     ASTPtr exp;
     ASTPtr lval;
     int type;
-    void Dump()  const override {
+    void Dump() const override {
         if(exp!=NULL){
             exp->level = this->level;
             exp->Dump();
@@ -412,20 +414,19 @@ public:
             lval->level = this->level;
             lval->Dump();
         }
-        if(exp == NULL && lval == NULL)
-        {
+        if(exp == NULL && lval == NULL){
             //if(type == 3)
             //    std::cout<< int_const << "";
             //else 
             {
                 PFX;
-                std::cout << "int_const: "<< int_const << " "<<endl;
+                std::cout << "int_const: "<< int_const << " "<<std::endl;
             }
         }
     }
 };
 
-class UnaryExpAST : public BaseAST  {
+class UnaryExpAST : public BaseAST {
 public:
     ASTPtr primary_exp;
     ASTPtr unary_exp;
@@ -433,7 +434,7 @@ public:
     std::string ident;
     int op_type;
     int type;
-    void Dump()  const override {
+    void Dump() const override {
         switch (type) {
             case 1:
                 primary_exp->level = this->level;
@@ -441,56 +442,51 @@ public:
                 break;
             case 2:
                 PFX;
-                std::cout << "ident: "<< ident<<endl;
+                std::cout << "ident: "<< ident<<std::endl;
                 break;
             case 3:
                 PFX;
-                std::cout << "FuncCall {"<<endl;
+                std::cout << "FuncCall {"<<std::endl;
                 PFXX;
-                std::cout << "ident: "<< ident<<endl;
+                std::cout << "ident: "<< ident<<std::endl;
                 PFXX;
-                std::cout << "FuncRParams: { "<<endl;
-                 
+                std::cout << "FuncRParams: { "<<std::endl;
                 params->level = this->level + 1;
                 params->Dump();
                 PFXX;
-                std::cout <<"}"<<endl;
+                std::cout <<"}"<<std::endl;
                 PFX;
-                std::cout <<"}"<<endl;
-                 
+                std::cout <<"}"<<std::endl;
                 break;
             case 4:
                 PFX;
-                std::cout <<"UnaryExp {"<<endl;
-
+                std::cout <<"UnaryExp {"<<std::endl;
                 PFXX;
                 switch (op_type){
                     case 1:
-                        std::cout << "op: + "<<endl;
+                        std::cout << "op: + "<<std::endl;
                         break;
                     case 2:
-                        std::cout << "op: -  "<<endl;
+                        std::cout << "op: -  "<<std::endl;
                         break;
                     case 3:
-                        std::cout << "op: !  "<<endl;
+                        std::cout << "op: !  "<<std::endl;
                         break;
                 }
-                 
                 unary_exp->level = this->level + 1;
                 unary_exp->Dump();
                 PFX;
-                std::cout << "}"<<endl;
-                 
+                std::cout << "}"<<std::endl; 
                 break;
         }
     }
 };
 
-class FuncRParamsAST : public BaseAST  {
+class FuncRParamsAST : public BaseAST {
 public:
     ASTPtr exp;
     ASTPtr params;
-    void Dump()  const override {
+    void Dump() const override {
         if(params!=NULL){
             params->level = this->level;
             params->Dump();
@@ -500,23 +496,23 @@ public:
     }
 };
 
-class MulExpAST : public BaseAST  {
+class MulExpAST : public BaseAST {
 public:
     ASTPtr mul_exp;
     ASTPtr unary_exp;
     int op_type;
-    void Dump()  const override {
+    void Dump() const override {
         if(mul_exp!=NULL){
             PFX;
-            std::cout << "MulExp{"<<endl;
+            std::cout << "MulExp{"<<std::endl;
             
             PFXX;
             if(op_type == 1)
-                std::cout << "op: mul"<<endl;
+                std::cout << "op: mul"<<std::endl;
             else if (op_type == 2)
-                std::cout << "op: div"<<endl;
+                std::cout << "op: div"<<std::endl;
             else if (op_type == 3)
-                std::cout << "op: mod"<<endl;
+                std::cout << "op: mod"<<std::endl;
              
             mul_exp->level = this->level+1;
             mul_exp->Dump();
@@ -524,8 +520,7 @@ public:
             unary_exp->level = this->level+1;
             unary_exp->Dump();
             PFX;
-            std::cout << "}"<<endl;
-             
+            std::cout << "}"<<std::endl;
         }
         else {
             unary_exp->level = this->level;
@@ -534,21 +529,21 @@ public:
     }
 };
 
-class AddExpAST : public BaseAST  {
+class AddExpAST : public BaseAST {
 public:
     ASTPtr add_exp;
     ASTPtr mul_exp;
     int op_type;
-    void Dump()  const override {
+    void Dump() const override {
         if(add_exp!=NULL){
             PFX;
-            std::cout << "AddExp{"<<endl;
+            std::cout << "AddExp{"<<std::endl;
 
             PFXX;
             if(op_type == 1)
-                std::cout << "op: add "<<endl;
+                std::cout << "op: add "<<std::endl;
             else if (op_type == 2)
-                std::cout << "op: sub "<<endl;
+                std::cout << "op: sub "<<std::endl;
              
             add_exp->level = this->level+1;
             add_exp->Dump();
@@ -556,8 +551,7 @@ public:
             mul_exp->level = this->level+1;
             mul_exp->Dump();
             PFX;
-            std::cout << "}"<<endl;
-             
+            std::cout << "}"<<std::endl;     
         }
         else{
             mul_exp->level = this->level;
@@ -567,24 +561,24 @@ public:
     }
 };
 
-class RelExpAST : public BaseAST  {
+class RelExpAST : public BaseAST {
 public:
     ASTPtr rel_exp;
     ASTPtr add_exp;
     int op_type;
-    void Dump()  const override {
+    void Dump() const override {
         if(rel_exp!=NULL){
             PFXX;
-            std::cout << "RelExp{"<<endl;
+            std::cout << "RelExp{"<<std::endl;
             PFXX;
             if(op_type == 1)
-                std::cout << "op: < "<<endl;
+                std::cout << "op: < "<<std::endl;
             else if (op_type == 2)
-                std::cout << "op: > "<<endl;
+                std::cout << "op: > "<<std::endl;
             else if (op_type == 3)
-                std::cout << "op: <= "<<endl;
+                std::cout << "op: <= "<<std::endl;
             else if (op_type == 4)
-                std::cout << "op: >= "<<endl;
+                std::cout << "op: >= "<<std::endl;
              
             rel_exp->level = this->level+1;
             rel_exp->Dump();
@@ -592,8 +586,7 @@ public:
             add_exp->level = this->level+1;
             add_exp->Dump();
             PFX;
-            std::cout << "}"<<endl;
-             
+            std::cout << "}"<<std::endl;    
         }
         else{
             add_exp->level = this->level;
@@ -602,20 +595,20 @@ public:
     }
 };
 
-class EqExpAST : public BaseAST  {
+class EqExpAST : public BaseAST {
 public:
     ASTPtr eq_exp;
     ASTPtr rel_exp;
     int op_type;
-    void Dump()  const override {
+    void Dump() const override {
         if(eq_exp!=NULL){
             PFX;
-            std::cout << "EqExp{"<<endl;
+            std::cout << "EqExp{"<<std::endl;
             PFXX;
             if(op_type == 1)
-                std::cout << "op: == "<<endl;
+                std::cout << "op: == "<<std::endl;
             else if (op_type == 2)
-                std::cout << "op: != "<<endl;
+                std::cout << "op: != "<<std::endl;
              
             eq_exp->level = this->level+1;
             eq_exp->Dump();
@@ -623,8 +616,7 @@ public:
             rel_exp->level = this->level+1;
             rel_exp->Dump();
             PFX;
-            std::cout << "}"<<endl;
-             
+            std::cout << "}"<<std::endl;   
         }
         else{
             rel_exp->level = this->level;
@@ -633,14 +625,14 @@ public:
     }
 };
 
-class LAndExpAST : public BaseAST  {
+class LAndExpAST : public BaseAST {
 public:
     ASTPtr land_exp;
     ASTPtr eq_exp;
-    void Dump()  const override {
+    void Dump() const override {
         if(land_exp!=NULL){
             PFX;
-            std::cout << "LAndExp{ "<<endl;
+            std::cout << "LAndExp{ "<<std::endl;
              
             land_exp->level = this->level+1;
             land_exp->Dump();
@@ -648,8 +640,7 @@ public:
             eq_exp->level = this->level+1;
             eq_exp->Dump();
             PFX;
-            std::cout << "}"<<endl;
-             
+            std::cout << "}"<<std::endl;
         }
         else{
             eq_exp->level = this->level;
@@ -658,14 +649,14 @@ public:
     }
 };
 
-class LOrExpAST : public BaseAST  {
+class LOrExpAST : public BaseAST {
 public:
     ASTPtr lor_exp;
     ASTPtr land_exp;
-    void Dump()  const override {
+    void Dump() const override {
         if(lor_exp!=NULL){
             PFX;
-            std::cout << "LOrExp { "<<endl;
+            std::cout << "LOrExp { "<<std::endl;
              
             lor_exp->level = this->level+1;
             lor_exp->Dump();
@@ -673,8 +664,7 @@ public:
             land_exp->level = this->level+1;
             land_exp->Dump();
             PFX;
-            std::cout << "}"<<endl;
-             
+            std::cout << "}"<<std::endl;
         }
         else{
             land_exp->level = this->level;
