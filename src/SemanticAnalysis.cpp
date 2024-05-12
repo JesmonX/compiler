@@ -264,7 +264,6 @@ void SmAnalysis::traverseStmtAST(StmtAST* node) {
 
 const VarDefinition& SmAnalysis::traverseLvalAST(LvalAST* node) {
     auto lval_name = node->ident;
-    std::cout << "lval_name: " << lval_name << std::endl;
     if (nullptr == node->unit) {  // IDENT
         if (false == symbol_table.search_var(lval_name)) throw runnerr("var not declared " + lval_name);
         return symbol_table.get_var_def(lval_name);
