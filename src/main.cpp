@@ -1,4 +1,4 @@
-#include "SemanticAnalysis.h"
+#include "semantic/SemanticAnalysis.h"
 #include "ast/ast.h"
 #include <fmt/core.h>
 #include <stdio.h>

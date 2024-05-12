@@ -1,6 +1,6 @@
-#include "SemanticAnalysis.h"
+#include "semantic/SemanticAnalysis.h"
 #include "ast/ast.h"
-#include "enum.h"
+#include "semantic/enum.h"
 #include <cassert>
 #include <cstddef>
 #include <iostream>

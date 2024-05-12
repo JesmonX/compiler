@@ -1,6 +1,6 @@
 #include "ast/ast.h"
-#include "enum.h"
-#include "symtable.h"
+#include "semantic/enum.h"
+#include "semantic/symtable.h"
 #include <unordered_map>
 #include <vector>
 
