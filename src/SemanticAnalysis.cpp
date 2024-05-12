@@ -110,6 +110,13 @@ void SmAnalysis::traverseFuncFParamAST(FuncFParamAST* node, std::string func_nam
         case 1:
             param_table[var_name].type     = "int";
             param_table[var_name].is_array = true;
+            param_table[var_name].dimension_num = get_node_unit_dim<ConstUnitAST>(dynamic_cast<ConstUnitAST*>(node->unit.get()));
+            if (param_table[var_name].dimension_num > 1) { traverseConstUnitAST(node->unit, param_table[var_name].dimensions, 0); }
+            param_vector.push_back(param_table[var_name]);
+            break;
+        case 2:
+            param_table[var_name].type     = "int";
+            param_table[var_name].is_array = true;
             // + 1 because when its unit's unit is null, should be 2
             param_table[var_name].dimension_num = 1 + get_node_unit_dim<ConstUnitAST>(dynamic_cast<ConstUnitAST*>(node->unit.get()));
             if (param_table[var_name].dimension_num > 1) { traverseConstUnitAST(node->unit, param_table[var_name].dimensions, 0); }
@@ -257,6 +264,7 @@ void SmAnalysis::traverseStmtAST(StmtAST* node) {
 
 const VarDefinition& SmAnalysis::traverseLvalAST(LvalAST* node) {
     auto lval_name = node->ident;
+    std::cout << "lval_name: " << lval_name << std::endl;
     if (nullptr == node->unit) {  // IDENT
         if (false == symbol_table.search_var(lval_name)) throw runnerr("var not declared " + lval_name);
         return symbol_table.get_var_def(lval_name);
@@ -265,8 +273,10 @@ const VarDefinition& SmAnalysis::traverseLvalAST(LvalAST* node) {
         auto& var_def      = symbol_table.get_var_def(lval_name);
         int   dim_num      = get_node_unit_dim<LvalUnitAST>(dynamic_cast<LvalUnitAST*>(node->unit.get()));
         int   real_dim_num = var_def.dimension_num - dim_num;
+        
         // traverse unit
         traverseLvalUnitAST(node->unit);
+        
         if (real_dim_num > 0) {
             // shit code just for test cases
             VarDefinition result_var_def = var_def;

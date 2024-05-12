@@ -30,7 +30,8 @@ extern unique_ptr<BaseAST> ast;
 %type <node> Block BlockItem Stmt LVal PrimaryExp FuncFParamUnit LValunit FuncRParams
 %type <node> UnaryExp   MulExp AddExp RelExp EqExp LAndExp LOrExp Exp
 
-
+%precedence THEN
+%precedence ELSE
 %%
 
 CompUnit
@@ -194,7 +195,7 @@ FuncFParam
     | INT IDENT '[' ']' FuncFParamUnit{
         auto func_f_param = new FuncFParamAST();
         func_f_param->ident = *($2);
-        func_f_param->type = 1;
+        func_f_param->type = 2;
         func_f_param->unit = unique_ptr<BaseAST>($5);
         $$ = func_f_param;
     }
@@ -279,7 +280,7 @@ Stmt
         a->type = 3;
         $$ = a;
     }
-    | IF '(' Exp ')' Stmt{
+    | IF '(' Exp ')' Stmt %prec THEN{
         auto a = new StmtAST();
         a->exp = unique_ptr<BaseAST>($3);
         a->stmt = unique_ptr<BaseAST>($5);

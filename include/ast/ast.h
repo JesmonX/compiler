@@ -175,11 +175,12 @@ public:
     ASTPtr params;
     void Dump() const override {
         param->level = this->level;
-        param->Dump();
         if(params!=NULL){
             params->level = this->level;
             params->Dump();
         }
+        param->Dump();
+        
     }
 };
 
@@ -193,17 +194,22 @@ public:
         PFXX;
         std::cout << "ident : "<<ident<<" ";
         std::cout << "param_type : "<< param_type;
-        if(type == 1)
+        if(type == 1 || type == 2)
             std::cout <<"[]";
         std::cout<<std::endl;
-        PFXX;
-        std::cout<<"/array"<<std::endl;
+        
+        
         if(unit!=NULL){
+            PFXX;
+            std::cout<<"/array"<<std::endl;
             unit->level = this->level;
             unit->Dump();
+            PFXX;
+            std::cout<<"array/"<<std::endl;
+            
         }
-        PFXX;
-        std::cout<<"array/"<<std::endl;
+        
+        
     }
 };
 
