@@ -12,17 +12,17 @@
 typedef struct fieldList* pFieldList;
 typedef struct tableItem* pItem;
 typedef struct hashTable* pHash;
-typedef struct stack*     pStack;
-typedef struct table*     pTable;
+typedef struct stack* pStack;
+typedef struct table* pTable;
 
 #define HT_SIZE 233
 #define HT_SEED 32
 
 class VarDefinition {
-  public:
-    std::string      type          = "";
-    bool             is_array      = false;
-    int              dimension_num = 0;
+public:
+    std::string type = "";
+    bool is_array = false;
+    int dimension_num = 0;
     std::vector<int> dimensions;
     VarDefinition(std::string tp, bool ia, int dim_num)
         : type(tp)
@@ -32,18 +32,18 @@ class VarDefinition {
 };
 using var_name2def = std::unordered_map<std::string, VarDefinition>;
 class FuncDefinition {
-  public:
-    std::string                func_type;
-    var_name2def               func_param_table;
+public:
+    std::string func_type;
+    var_name2def func_param_table;
     std::vector<VarDefinition> func_param_vector;
     FuncDefinition() = default;
 };
 class SymbolTable {
-  public:
+public:
     std::unordered_map<std::string, FuncDefinition> func_table;
-    std::vector<var_name2def>                       var_table_stack;
+    std::vector<var_name2def> var_table_stack;
 
-  public:
+public:
     SymbolTable() {
         var_table_stack.push_back(std::unordered_map<std::string, VarDefinition>());
     }
@@ -54,7 +54,7 @@ class SymbolTable {
     bool search_var(std::string var_name) {
         int n = var_table_stack.size();
         for (int i = n - 1; i >= 0; i--) {
-            if (var_table_stack[i].count(var_name) > 0) { return true; }
+            if (var_table_stack[i].count(var_name) > 0)  return true; 
         }
         return false;
     }
@@ -64,7 +64,7 @@ class SymbolTable {
     const VarDefinition& get_var_def(std::string var_name) {
         int n = var_table_stack.size();
         for (int i = n - 1; i >= 0; i--) {
-            if (var_table_stack[i].count(var_name) > 0) { return var_table_stack[i][var_name]; }
+            if (var_table_stack[i].count(var_name) > 0)  return var_table_stack[i][var_name]; 
         }
         throw std::runtime_error("this code should never be reached");
     }
@@ -72,11 +72,11 @@ class SymbolTable {
         func_table[func_name].func_type = type;
     }
     void insert_var(std::string var_name, VarDefinition var_def) {  // must search before insert
-        auto& var_table                   = var_table_stack.back();
-        var_table[var_name].type          = var_def.type;
+        auto& var_table = var_table_stack.back();
+        var_table[var_name].type = var_def.type;
         var_table[var_name].dimension_num = var_def.dimension_num;
-        var_table[var_name].is_array      = var_def.is_array;
-        var_table[var_name].dimensions    = var_def.dimensions;
+        var_table[var_name].is_array = var_def.is_array;
+        var_table[var_name].dimensions = var_def.dimensions;
     }
     void enter_block(std::string func_block) {
         auto var_def = var_name2def();

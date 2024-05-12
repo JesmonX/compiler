@@ -5,18 +5,18 @@
 #include <vector>
 
 class SmAnalysis {
-  private:
-    SymbolTable   symbol_table;
-    std::string   func_block = "";
+private:
+    SymbolTable symbol_table;
+    std::string func_block = "";
     VarDefinition hope_exp_to_comply;
     VarDefinition pre_def_int;
     VarDefinition pre_def_void;
     VarDefinition pre_def_array;
-    std::string   cur_func;
+    std::string cur_func;
 
     std::vector<VarDefinition> temp_def_store; // this is junk code just for test cases
 
-  public:
+public:
     SmAnalysis()
         : hope_exp_to_comply("", false, 0)
         , pre_def_int("int", false, 0)
@@ -48,10 +48,10 @@ class SmAnalysis {
     void traverseFuncFParamAST(FuncFParamAST* node, std::string func_name);
     void traverseBlockAST(BlockAST* node);
     void traverseFuncRParamsAST(FuncRParamsAST* node, std::string func_name, int& index);
-    ;
-    void                 traverseBlockItemAST(BlockItemAST* node);
-    void                 traverseStmtAST(StmtAST* node);
-    void                 traverseLvalUnitAST(LvalUnitAST* node);
+    
+    void traverseBlockItemAST(BlockItemAST* node);
+    void traverseStmtAST(StmtAST* node);
+    void traverseLvalUnitAST(LvalUnitAST* node);
     const VarDefinition& traverseLvalAST(LvalAST* node);
     const VarDefinition& traversePrimaryExpAST(PrimaryExpAST* node);
     const VarDefinition& traverseUnaryExpAST(UnaryExpAST* node);
@@ -138,11 +138,11 @@ class SmAnalysis {
     }
     bool compare_var_def(const VarDefinition& A, const VarDefinition& B) {
         bool result = false;
-        if (!(A.type == B.type && A.is_array == B.is_array && A.dimension_num == B.dimension_num)) return false;
-        if (!(A.is_array)) return true;
+        if (!(A.type == B.type && A.is_array == B.is_array && A.dimension_num == B.dimension_num))  return false;
+        if (!(A.is_array))  return true;
         int n = A.dimensions.size();
         for (int i = 0; i <= n - 1; i++) {
-            if (A.dimensions[i] != B.dimensions[i]) { return false; }
+            if (A.dimensions[i] != B.dimensions[i])  return false;
         }
         return true;
     }
