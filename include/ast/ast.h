@@ -4,15 +4,18 @@
 #include <type_traits>
 #include <string>
 #include <memory>
+#include "ir/ir.h"
 
 #define PFX std::cout<<prefix(this->level)
 #define PFXX std::cout<<prefix(this->level+1)
 std::string prefix(int level);
+Type* typehandler(std::string ty);
 class BaseAST {
 public:
     virtual ~BaseAST() = default;
     virtual void Dump() const = 0;
     int level = 0;
+    bool isgloble = 0;
 };
 using ASTPtr = std::unique_ptr<BaseAST>;
 
@@ -43,7 +46,10 @@ public:
         block->Dump();
         PFX;
         std::cout << "}"<<std::endl;
-  }
+    }
+
+    
+
 };
 
 class VarDefAST : public BaseAST {
@@ -97,6 +103,7 @@ public:
             func_def->Dump();
         }
         if(var_def){
+            var_def->isgloble = 1;
             var_def->level = this->level;
             var_def->Dump();
         }
@@ -115,8 +122,8 @@ public:
         comp_units->Dump();
         PFX;
         std::cout <<"}"<<std::endl;
-         
     }
+
 };
 
 class CompUnitsAST : public BaseAST {
@@ -135,6 +142,7 @@ public:
             comp_unit->Dump();
         }
     }
+
 };
 
 
@@ -148,6 +156,7 @@ public:
             mul_var_def->Dump();
         }
         if(var_def) {
+            var_def->isgloble = this->isgloble;
             var_def->level = this->level;
             var_def->Dump();
         }
@@ -180,8 +189,8 @@ public:
             params->Dump();
         }
         param->Dump();
-        
     }
+
 };
 
 class FuncFParamAST : public BaseAST {
@@ -208,8 +217,6 @@ public:
             std::cout<<"array/"<<std::endl;
             
         }
-        
-        
     }
 };
 

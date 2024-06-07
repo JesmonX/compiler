@@ -7,6 +7,10 @@ project(compiler
 
 # CTest
 enable_testing()
+# cmake configurations
+set(CMAKE_CONFIGURATION_TYPES "Debug;Release" CACHE STRING "limited configs list: Debug, Release" FORCE)
+# set cmake debug postfix
+set(CMAKE_DEBUG_POSTFIX "d")
 
 # settings
 # set to OFF to enable C mode
@@ -21,9 +25,13 @@ message(STATUS "Flex/Bison generated source file extension: ${FB_EXT}")
 # enable all warnings
 if(MSVC)
   add_compile_options(/W3)
+  add_compile_options("$<$<CONFIG:Debug>:/fsanitize=address;/Zi>;$<$<CONFIG:Release>:/O2>")
+  add_link_options("$<$<CONFIG:Debug>:/fsanitize=address;/DEBUG:FULL>")
 else()
   # disable warnings caused by old version of Flex
-  add_compile_options(-Wall -Wno-register)
+  add_compile_options(-Wall -Wextra -Wno-register)
+  add_compile_options("$<$<CONFIG:Debug>:-O0;-g;-fsanitize=address;-fno-omit-frame-pointer;-fno-optimize-sibling-calls>;$<$<CONFIG:Release>:-O2;-DNDEBUG>")
+  add_link_options("$<$<CONFIG:Debug>:-fsanitize=address>")
 endif()
 
 # find Flex/Bison
@@ -46,7 +54,7 @@ add_subdirectory(third_party/fmt EXCLUDE_FROM_ALL)
 # project include directories
 include_directories(include)
 include_directories(third_party/fmt/include)
-
+include_directories(accsys/include)
 # all of C/C++ source files
 file(GLOB_RECURSE C_SOURCES "src/*.c")
 file(GLOB_RECURSE CXX_SOURCES "src/*.cpp")
@@ -58,6 +66,10 @@ set(SOURCES ${C_SOURCES} ${CXX_SOURCES} ${CC_SOURCES}
 add_executable(compiler ${SOURCES})
 set_target_properties(compiler PROPERTIES C_STANDARD 11 CXX_STANDARD 17)
 target_link_libraries(compiler PRIVATE fmt::fmt-header-only)
+# add accsys template library dependencies.
+add_subdirectory(accsys)
+target_link_libraries(compiler PRIVATE accsys::accsys)
+target_include_directories(compiler INTERFACE accsys::accsys)
 
 # some possible build options you may use.
 # you can specify whatever you prefer.

@@ -1,5 +1,7 @@
 #include "semantic/SemanticAnalysis.h"
 #include "ast/ast.h"
+#include "ir/ir.h"
+#include "ir/type.h"
 #include <fmt/core.h>
 #include <stdio.h>
 
@@ -48,5 +50,9 @@ int main(int argc, char** argv) {
     std::cout << "[INFO] Semantic analysis success" << std::endl;
     std::cout << "--------------------------------------" << std::endl;
     
+    
+    
+    
+
     return ret;
 }
