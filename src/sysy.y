@@ -368,12 +368,14 @@ PrimaryExp
         auto a = new PrimaryExpAST();
         a->exp = unique_ptr<BaseAST>($2);
         a->lval = NULL;
+        a->type = 1;
         $$ = a;
     }
     | LVal{
         auto a = new PrimaryExpAST();
         a->lval = unique_ptr<BaseAST>($1);
         a->exp = NULL;
+        a->type = 2;
         $$ = a;
     }
     | INT_CONST{
@@ -381,6 +383,7 @@ PrimaryExp
         a->int_const = $1;
         a->lval = NULL;
         a->exp = NULL;
+        a->type = 3;
         $$ = a;
     }
     ;

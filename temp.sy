@@ -1,0 +1,18 @@
+int getint();
+int getch();
+int getarray(int a[]);
+void putint(int num);
+void putch(int ch);
+putarray(int n, int a[]);
+void starttime();
+void stoptime();
+// Input: 10 -1
+// Output: 9
+
+int main(){
+    int a, b;
+    a = getint();
+    b = getint();
+    putint(a+b);
+    return 0;
+}
