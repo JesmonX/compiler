@@ -255,15 +255,15 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
 Value* irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irLvalAST"<<std::endl;
-    
+    //只是为了一个名字
     Module* temp = new Module();
     FunctionType *ty = FunctionType::get(Type::getUnitTy(),{});
     auto f = Function::Create(ty,true,node->ident,temp);
     auto b = BasicBlock::Create(f);
     auto c = BasicBlock::Create(f);
     auto res = JumpInst::Create(b,c);
+    
     res->setName(node->ident);
-    std::cout<<res->getName()<<std::endl;
     irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
     return res;
 }
