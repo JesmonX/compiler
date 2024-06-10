@@ -106,6 +106,7 @@ void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtab
     {
         auto var = GlobalVariable::Create(ty,nums,false,node->ident,module);
         var->setName(node->ident);
+        symtable->insert_or_assign(node->ident,var);///?
     }
     else
     {
@@ -131,8 +132,14 @@ int irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable){
 
 BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
     std::cout<<"debug:irBlockAST"<<std::endl;
+    symtable->enter();
     if(node->item)
-        return irBlockItemAST(dc(BlockItemAST,node->item),module,bb,symtable,ret);
+    {
+        auto res = irBlockItemAST(dc(BlockItemAST,node->item),module,bb,symtable,ret);
+        symtable->exit();
+        return res;
+    }
+    
     return bb;
 }
 
@@ -141,10 +148,11 @@ BasicBlock* irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, s
     BasicBlock* res = bb;
     if(node->block_item)
         res = irBlockItemAST(dc(BlockItemAST,node->block_item),module,bb,symtable,ret);
+    //if cur bb changed in the block item , update the bb as res
     if(node->stmt)
-        res = irStmtAST(dc(StmtAST,node->stmt),module,bb,symtable,ret);
+        res = irStmtAST(dc(StmtAST,node->stmt),module,res,symtable,ret);
     if(node->mul_var_def)
-        irMulVarDefAST(dc(MulVarDefAST,node->mul_var_def),module,symtable,bb);
+        irMulVarDefAST(dc(MulVarDefAST,node->mul_var_def),module,symtable,res);
     return res;
 }
 
@@ -180,7 +188,6 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
             //auto falsebb = BasicBlock::Create(func);
             auto endbb = BasicBlock::Create(func,ret->bb);
             auto br = BranchInst::Create(truebb,endbb,cond,bb);
-            
             auto tempbb = irStmtAST(dc(StmtAST,node->stmt),module,truebb,symtable,ret);
             auto jp = JumpInst::Create(endbb,tempbb);
             //irStmtAST(dc(StmtAST,node->stmt2),module,falsebb,symtable);

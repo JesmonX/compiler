@@ -17,10 +17,10 @@ extern FILE*        yyin;
 unique_ptr<BaseAST> ast;
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        fmt::print("Usage: {} <filename>\n", argv[0]);
+    if (argc < 3) {
+        fmt::print("Usage: {} <input file> <output file>\n", argv[0]);
         return 1;
-    } else if (argc > 2) {
+    } else if (argc > 3) {
         fmt::print("Too many arguments\n");
         return 1;
     }
@@ -89,8 +89,10 @@ int main(int argc, char** argv) {
     Function::Create(stoptime_ty,true,"stoptime",&module);
 
     irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
-    std::cout <<"debug"<<std::endl;
-    module.print(std::cout,1);
+    fstream file;
+    string Filename = argv[2];
+    file.open(Filename, ios::out);
+    module.print(file,1);
     
     
     //std::remove(tempFilename.c_str());

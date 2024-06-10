@@ -127,7 +127,7 @@ VarDefunit
     ;
 
 FuncDef 
-    : INT IDENT '(' FuncFParams ')' Block{}
+    : INT IDENT '(' FuncFParams ')' Block
     {
         auto func_def = new FuncDefAST();
         func_def->ident = *($2);
