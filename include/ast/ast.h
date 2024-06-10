@@ -133,13 +133,13 @@ public:
 
     void Dump() const override {
         
-        if(def) {
-            def->level = this->level;
-            def->Dump();
-        }
         if(comp_unit){
             comp_unit->level = this->level;
             comp_unit->Dump();
+        }
+        if(def) {
+            def->level = this->level;
+            def->Dump();
         }
     }
 

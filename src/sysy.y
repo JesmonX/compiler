@@ -51,8 +51,8 @@ CompUnits
     }   
     | CompUnits Decl{
         auto a = new CompUnitsAST();
-        a->def = unique_ptr<BaseAST>($1);
-        a->comp_unit = unique_ptr<BaseAST>($2);
+        a->def = unique_ptr<BaseAST>($2);
+        a->comp_unit = unique_ptr<BaseAST>($1);
         $$ = a;
     } 
     ;

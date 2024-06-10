@@ -8,12 +8,12 @@
 
 void irCompUnitAST(CompUnitAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irCompUnitAST"<<std::endl;
-    if(node->comp_units)
-        irCompUnitsAST(dc(CompUnitsAST,node->comp_units),module,symtable);
+    irCompUnitsAST(dc(CompUnitsAST,node->comp_units),module,symtable);
 }
 
 void irCompUnitsAST(CompUnitsAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irCompUnitsAST"<<std::endl;
+
     if(node->comp_unit)
         irCompUnitsAST(dc(CompUnitsAST,node->comp_unit),module,symtable);
     if(node->def)
@@ -157,15 +157,9 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
             //这里需要符号表
             auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);
             auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
-            std::cout<<"123"<<std::endl;
             auto var = symtable->find(lval->getName());
-            std::cout<<lval->getName().data()<<std::endl;
-            if(var == nullptr)
-                std::cout<<"123"<<std::endl;
             auto load = LoadInst::Create(var,bb);
-            std::cout<<"123"<<std::endl;
             auto store = StoreInst::Create(exp,load,bb);
-            std::cout<<"123"<<std::endl;
             return bb;
         }
     case 2://exp
@@ -257,11 +251,11 @@ Value* irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable
     std::cout<<"debug:irLvalAST"<<std::endl;
     //只是为了一个名字
     Module* temp = new Module();
-    FunctionType *ty = FunctionType::get(Type::getUnitTy(),{});
+    FunctionType *ty = FunctionType::get(Type::getIntegerTy(),{});
     auto f = Function::Create(ty,true,node->ident,temp);
     auto b = BasicBlock::Create(f);
     auto c = BasicBlock::Create(f);
-    auto res = JumpInst::Create(b,c);
+    auto res = CallInst::Create((Function*)f,std::vector<Value*>(),b);  
     
     res->setName(node->ident);
     irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
@@ -293,6 +287,9 @@ Value* irLOrExpAST(LOrExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto r = irLAndExpAST(dc(LAndExpAST,node->land_exp),module,bb,symtable);
         auto ty = typehandler("int");
         auto res = BinaryInst::Create(BinaryInst::Or,l,r,ty,bb);
+        std::cout<<"type:lor"<<std::endl;
+        std::cout<<r->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getType()->getTypeID()<<std::endl;
         return res;
     }
     else
@@ -312,6 +309,9 @@ Value* irLAndExpAST(LAndExpAST* node, Module* module, BasicBlock* bb, symtab* sy
         auto r = irEqExpAST(dc(EqExpAST,node->eq_exp),module,bb,symtable);
         auto ty = typehandler("int");
         auto res = BinaryInst::Create(BinaryInst::And,l,r,ty,bb);
+        std::cout<<"type:land"<<std::endl;
+        std::cout<<r->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getType()->getTypeID()<<std::endl;
         return res;
     }
     else
@@ -326,6 +326,11 @@ Value* irEqExpAST(EqExpAST* node, Module* module, BasicBlock* bb, symtab* symtab
         auto l = irEqExpAST(dc(EqExpAST,node->eq_exp),module,bb,symtable);
         auto r = irRelExpAST(dc(RelExpAST,node->rel_exp),module,bb,symtable);
         auto ty = typehandler("int");
+        std::cout<<"type:eq"<<std::endl;
+        std::cout<<r->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getName()<<std::endl;
+        std::cout<<l->getValueID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Eq,l,r,ty,bb);
         else
@@ -343,6 +348,9 @@ Value* irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto l = irRelExpAST(dc(RelExpAST,node->rel_exp),module,bb,symtable);
         auto r = irAddExpAST(dc(AddExpAST,node->add_exp),module,bb,symtable);
         auto ty = typehandler("int");
+        std::cout<<"type:rel"<<std::endl;
+        std::cout<<r->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getType()->getTypeID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Lt,l,r,ty,bb);
         else if(node->op_type == 2)
@@ -365,6 +373,9 @@ Value* irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto l = irAddExpAST(dc(AddExpAST,node->add_exp),module,bb,symtable);
         auto r = irMulExpAST(dc(MulExpAST,node->mul_exp),module,bb,symtable);
         auto ty = typehandler("int");
+        std::cout<<"type:add"<<std::endl;
+        std::cout<<r->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getType()->getTypeID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Add,l,r,ty,bb);
         else
@@ -382,6 +393,9 @@ Value* irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto l = irMulExpAST(dc(MulExpAST,node->mul_exp),module,bb,symtable);
         auto r = irUnaryExpAST(dc(UnaryExpAST,node->unary_exp),module,bb,symtable);
         auto ty = typehandler("int");
+        std::cout<<"type:mul"<<std::endl;
+        std::cout<<r->getType()->getTypeID()<<std::endl;
+        std::cout<<l->getType()->getTypeID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Mul,l,r,ty,bb);
         else if(node->op_type == 2)
@@ -400,9 +414,6 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
     {
     case 1:
         {
-            std::cout<<"1"<<std::endl;
-            if(node->primary_exp == nullptr)
-                std::cout<<"O.o"<<std::endl;
             return irPrimaryExpAST(dc(PrimaryExpAST,node->primary_exp),module,bb,symtable);
         }
     case 2://call
@@ -415,7 +426,6 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
         }
     case 3://call and args
         {
-            std::cout<<"3"<<std::endl;
             auto args = irFuncRParamsAST(dc(FuncRParamsAST,node->params),module,bb,symtable);
             auto func = module->getFunction(node->ident);
             auto call = CallInst::Create(func,args,bb);
@@ -425,12 +435,17 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
         {
             auto exp = irUnaryExpAST(dc(UnaryExpAST,node->unary_exp),module,bb,symtable);
             auto ty = typehandler("int");
+            auto zero = ConstantInt::Create(0);
+            std::cout<<"type:unary"<<std::endl;
+            
+            std::cout<<exp->getType()->getTypeID()<<std::endl;
+            std::cout<<zero->getType()->getTypeID()<<std::endl;
             if(node->op_type == 1)
-                return BinaryInst::Create(BinaryInst::Add,ConstantInt::Create(0),exp,ty,bb);
+                return BinaryInst::Create(BinaryInst::Add,zero,exp,ty,bb);
             else if(node->op_type == 2)
-                return BinaryInst::Create(BinaryInst::Sub,ConstantInt::Create(0),exp,ty,bb);
+                return BinaryInst::Create(BinaryInst::Sub,zero,exp,ty,bb);
             else if(node->op_type == 3)
-                return BinaryInst::Create(BinaryInst::Eq,ConstantInt::Create(0),exp,ty,bb);
+                return BinaryInst::Create(BinaryInst::Eq,zero,exp,ty,bb);
         }
     }
 }
@@ -452,7 +467,6 @@ std::vector<Value*> irFuncRParamsAST(FuncRParamsAST* node, Module* module, Basic
 Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irPrimaryExpAST"<<std::endl;
-    std::cout<<node->type<<std::endl;
 
     if(node->exp)
         return irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
@@ -463,11 +477,10 @@ Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symt
     }
     else if(node->exp==nullptr && node->lval == nullptr)
     {
-        std::cout<<node->int_const;
         auto constint = ConstantInt::Create(node->int_const);
+        std::cout<<constint->getType()->getTypeID()<<std::endl;
         return constint;
     }
-    std::cout<<"null"<<std::endl;
     return nullptr;
 }
 
