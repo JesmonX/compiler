@@ -6,5 +6,5 @@ cmake --build build
 cd tests
 python test.py ./../build/compiler lab1
 python test.py ./../build/compiler lab2
-ython test.py ../build/compiler lab3 --executor_path=./accipit-linux-x86_64-gnu
+python test.py ../build/compiler lab3 --executor_path=./accipit-linux-x86_64-gnu
 ```

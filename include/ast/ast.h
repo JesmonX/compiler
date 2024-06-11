@@ -55,7 +55,6 @@ public:
 class VarDefAST : public BaseAST {
 public:
 
-    int int_const;
     std::string ident;
     ASTPtr exp;
     ASTPtr unit;

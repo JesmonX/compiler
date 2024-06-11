@@ -1,0 +1,1 @@
+python test.py ../build/compiler lab3 --executor_path=./accipit-linux-x86_64-gnu

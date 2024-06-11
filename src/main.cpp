@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
     Function::Create(stoptime_ty,true,"stoptime",&module);
 
     irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
-    fstream file;
+    fstream file,debugfile;
     string Filename;
     if(argc == 2)
         //去掉前面的路径 和 后缀
@@ -89,6 +89,8 @@ int main(int argc, char** argv) {
     else 
         Filename = argv[2];
     file.open(Filename, ios::out);
+    debugfile.open(argv[1], ios::in);
+    //file << debugfile.rdbuf();
     module.print(file,1);
     
     

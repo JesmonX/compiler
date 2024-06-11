@@ -3,6 +3,7 @@
 #include "ir/makeir.h"
 #include "semantic/enum.h"
 #include <iostream>
+#include <optional>
 #define dc(x,n) dynamic_cast<x*>(n.get())
 
 
@@ -34,25 +35,34 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irFuncDefAST"<<std::endl;
     auto ty = typehandler(node->func_type);
     int num = (ty==Type::getIntegerTy())?1:0;
-    std::vector<Type*> paramty;
-    if(node->func_fparams == nullptr)
-        ;
-    else{
-        auto temp = irFuncFParamsAST(dc(FuncFParamsAST,node->func_fparams),module,symtable);
-        paramty.insert(paramty.begin(),temp.begin(),temp.end());
-    }
-    auto func = Function::Create(FunctionType::get(ty,paramty),false,node->ident,module);
+    param_list paramty = param_list({{}},std::vector<Type*>(),std::vector<std::string_view>());
+    
+    if(node->func_fparams)
+        paramty = irFuncFParamsAST(dc(FuncFParamsAST,node->func_fparams),module,symtable);
+
+    auto func = Function::Create(FunctionType::get(ty,paramty.types),false,node->ident,module);
     auto bb = BasicBlock::Create(func);
     //basic block
     bb->setName("entry");
     if(node->func_fparams != nullptr)
     {
-        Instruction* inst[paramty.size()][2];
-        for(int i = 0;i<paramty.size();i++)
+        Instruction* inst[paramty.types.size()][2];
+        for(int i = 0;i<paramty.types.size();i++)
         {
             //alloca and store param
-            inst[i][0] = AllocaInst::Create(paramty[i]->getPointerElementType(),paramty[i]->getFunctionNumParams(),bb);
+            int size = 1;
+            for(auto j:paramty.dims[i])
+                size *= j; //size of this param
+
+            inst[i][0] = AllocaInst::Create(paramty.types[i],size,bb);
+
+            //update symbol table
+            symtable->insert_or_assign(paramty.names[i],inst[i][0]);
+            if(paramty.types[i]->getTypeID() == Type::PointerTyID)
+                symtable->set_dims(paramty.names[i],paramty.dims[i]);
+            
             inst[i][1] = StoreInst::Create(func->getArg(i),inst[i][0],bb);
+
         }
     }
     
@@ -68,24 +78,41 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
 
 }
 
-std::vector<Type*> irFuncFParamsAST(FuncFParamsAST* node,Module* module,symtab* symtable){
+param_list irFuncFParamsAST(FuncFParamsAST* node,Module* module,symtab* symtable){
     std::cout<<"debug:irFuncFParamsAST"<<std::endl;
-    std::vector<Type*> res;
+    std::vector<std::vector<int>> dims;
+    std::vector<Type*> types;
+    std::vector<std::string_view> names;
         
-    auto ty = irFuncFParamAST(dc(FuncFParamAST,node->param),module,symtable);
+    auto param = irFuncFParamAST(dc(FuncFParamAST,node->param),module,symtable);
     
     if(node->params) {
         auto tmp = irFuncFParamsAST(dc(FuncFParamsAST,node->params),module,symtable);
-        res.insert(res.begin(),tmp.begin(),tmp.end());
+        dims.insert(dims.begin(),tmp.dims.begin(),tmp.dims.end());
+        types.insert(types.begin(),tmp.types.begin(),tmp.types.end());
+        names.insert(names.begin(),tmp.names.begin(),tmp.names.end());
     }
-    res.push_back(ty);
-    return res;
+    dims.push_back(param.dim);
+    types.push_back(param.type);
+    names.push_back(param.name);
+    return param_list(dims,types,names);
 }
+//需要传回去的
+//名字··符号表
+//size..alloca
+//type..alloca ..vector
 
-Type* irFuncFParamAST(FuncFParamAST* node,Module* module,symtab* symtable){
+param_info irFuncFParamAST(FuncFParamAST* node,Module* module,symtab* symtable){
     std::cout<<"debug:irFuncFParamAST"<<std::endl;
-    return typehandler(node->param_type);
-    //未处理指针
+    std::vector<int> dim;
+    if(node->unit)
+        dim = irConstUnitAST(dc(ConstUnitAST,node->unit),module,symtable);
+
+    auto type = Type::getIntegerTy();
+    if(node->type!=0)
+        auto type = PointerType::get(Type::getIntegerTy());
+    auto name = node->ident;
+    return param_info(name,type,dim);
 }
 
 void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb){
@@ -99,22 +126,26 @@ void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicB
 void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable){
     std::cout<<"debug:irVarDefAST"<<std::endl;
     auto ty = typehandler("int");
-    int nums = (node->int_const==0)?1:node->int_const;
+    int nums = 1;
+    std::vector<int> units;
     if(node->unit){
-        int tmp = irConstUnitAST(dc(ConstUnitAST,node->unit),module,symtable);
-        nums *= tmp;//数组大小
+        units = irConstUnitAST(dc(ConstUnitAST,node->unit),module,symtable);
+        for(auto i:units)
+            nums *= i;//计算数组大小
     }
     if(node->isgloble)
     {
         auto var = GlobalVariable::Create(ty,nums,false,node->ident,module);
         var->setName(node->ident);
-        symtable->insert_or_assign(node->ident,var);///?
+        symtable->set_both(node->ident,var,units);
     }
     else
     {
         auto var = AllocaInst::Create(ty,nums,bb);
         std::string_view name = node->ident;
-        symtable->insert_or_assign(name,var);//update or create
+        symtable->set_both(name,var,units);
+        std::cout<<name<<std::endl;
+        std::cout<<symtable->find_dims(name).size()<<std::endl;
         var->setName(node->ident+".addr");
         if(node->exp){
             auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
@@ -124,12 +155,16 @@ void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtab
     
 }
 
-int irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable){
+std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irConstUnitAST"<<std::endl;
+    std::vector<int> res;
+    res.push_back(node->int_const);
     if(node->unit)
-        return irConstUnitAST(dc(ConstUnitAST,node->unit),module,symtable) * node->int_const;
-    else 
-        return node->int_const;
+    {
+        auto tmp = irConstUnitAST(dc(ConstUnitAST,node->unit),module,symtable);
+        res.insert(res.end(),tmp.begin(),tmp.end());
+    }
+    return res;
 }
 
 BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
@@ -165,11 +200,22 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
         {
             //load 的ptr是vardef 的alloca的指针 
             //这里需要符号表
-            auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);
+            auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);//addr
             auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
-            //auto var = symtable->find(lval->getName());
-            //auto load = LoadInst::Create(var,bb);
-            auto store = StoreInst::Create(exp,lval,bb);
+
+            if(lval.second.size() != 0)
+            {
+                auto bound = get_bounds(symtable->find_dims(lval.first->getName().substr(0,lval.first->getName().find("."))));
+                std::cout<<"bound"<<bound.size()<<std::endl;
+                std::cout<<"lval"<<lval.second.size()<<std::endl;
+                auto offset = OffsetInst::Create(Type::getIntegerTy(),lval.first,lval.second,bound,bb);
+                auto store = StoreInst::Create(exp,offset,bb);
+            }
+            else 
+            {
+                auto store = StoreInst::Create(exp,lval.first,bb);
+            }
+            
             return bb;
         }
     case 2://exp
@@ -240,17 +286,17 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
     case 9://return
         {
             auto jp = JumpInst::Create(ret->bb,bb);
-            auto load = LoadInst::Create(ret->addr,ret->bb);
-            auto retinst = RetInst::Create(load,ret->bb);
+            auto voidval = ConstantUnit::Create();
+            auto retinst = RetInst::Create(voidval,ret->bb);
             return nullptr;
         }
     case 10://return exp
         {
             auto retexp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
-            auto store = StoreInst::Create(retexp,ret->addr,bb);
+            //auto store = StoreInst::Create(retexp,ret->addr,bb);
             auto jp = JumpInst::Create(ret->bb,bb);
-            auto load = LoadInst::Create(ret->addr,ret->bb);
-            auto retinst = RetInst::Create(load,ret->bb);
+            //auto load = LoadInst::Create(ret->addr,ret->bb);
+            auto retinst = RetInst::Create(retexp,ret->bb);
             
             return nullptr;
         }
@@ -260,22 +306,14 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
     
 }
 
-Value* irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+lvalpair irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irLvalAST"<<std::endl;
-    //只是为了一个名字
-    //Module* temp = new Module();
-    //FunctionType *ty = FunctionType::get(Type::getIntegerTy(),{});
-    //auto f = Function::Create(ty,true,node->ident,temp);
-    //auto b = BasicBlock::Create(f);
-    //auto c = BasicBlock::Create(f);
-    //auto res = CallInst::Create((Function*)f,std::vector<Value*>(),b);  
-    
     auto res = symtable->find(node->ident);
-    
-    //res->setName(node->ident);
-    irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
-    return res;
+    std::vector<Value*> units;
+    if(node->unit)
+        units = irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
+    return lvalpair(res,units);
 }
 
 
@@ -490,20 +528,58 @@ Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symt
     else if(node->lval)
     {
         auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);
-        auto load = LoadInst::Create(lval,bb);
-        return load;
+
+        if(lval.second.size() != 0)
+        {
+            auto bound = get_bounds(symtable->find_dims(lval.first->getName().substr(0,lval.first->getName().find("."))));
+            std::cout<<"bound"<<bound.size()<<std::endl;
+            std::cout<<"lval"<<lval.second.size()<<std::endl;
+            auto offset = OffsetInst::Create(Type::getIntegerTy(),lval.first,lval.second,bound,bb);
+            auto load = LoadInst::Create(offset,bb);
+            return load;
+            
+        }
+        else{
+            auto load = LoadInst::Create(lval.first,bb);
+            return load;
+        }
+
     }
-    else if(node->exp==nullptr && node->lval == nullptr)
+    else 
     {
         auto constint = ConstantInt::Create(node->int_const);
-        std::cout<<constint->getType()->getTypeID()<<std::endl;
+
+        std::cout<<node->int_const<<std::endl;
         return constint;
     }
     return nullptr;
 }
 
-Value* irLvalUnitAST(LvalUnitAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+std::vector<Value*> irLvalUnitAST(LvalUnitAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irLvalUnitAST"<<std::endl;
-    return nullptr;
+    std::vector<Value*> res;
+    auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
+    if(node->unit)
+    {
+        auto tmp = irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
+        res.insert(res.begin(),tmp.begin(),tmp.end());
+    }
+    res.push_back(exp);
+    return res;
+}
+
+
+
+std::vector<std::optional<std::size_t>> get_bounds(std::vector<int> dims)
+{
+    std::vector<std::optional<std::size_t>> res;
+    for(auto i:dims)
+    {
+        if(i == 0)
+            res.push_back(std::nullopt);
+        else
+            res.push_back(i);
+    }
+    return res;
 }
