@@ -8,17 +8,19 @@ fn @starttime( ) -> ();
 fn @stoptime( ) -> ();
 fn @main( ) -> i32 {
 %entry:
-  let %0: i32** = alloca i32*, 0 // Users: %8: (), 
-  let %b.addr = alloca i32, 0 // Users: %4: i32, 
-  let %a.addr = alloca i32, 0 // Users: %1: i32, 
-  let %1: i32 = load %a.addr // Users: %2: (), 
-  let %2: () = store 10, %1: i32 // Users: 
-  let %3: i32 = sub 0, 1 // Users: %5: (), 
-  let %4: i32 = load %b.addr // Users: %5: (), 
-  let %5: () = store %3: i32, %4: i32 // Users: 
-  let %6: i32 = add %a, %b // Users: %7: (), 
-  let %7: () = call @putint, %6: i32 // Users: 
-  let %8: () = store 0, %0: i32** // Users: 
+  let %ret.addr = alloca i32, 1 // Users: %9: i32, %7: (), 
+  let %b.addr = alloca i32, 1 // Users: %4: i32, %2: (), 
+  let %a.addr = alloca i32, 1 // Users: %3: i32, %0: (), 
+  let %0: () = store 10, %a.addr // Users: 
+  let %1: i32 = sub 0, 1 // Users: %2: (), 
+  let %2: () = store %1: i32, %b.addr // Users: 
+  let %3: i32 = load %a.addr // Users: %5: i32, 
+  let %4: i32 = load %b.addr // Users: %5: i32, 
+  let %5: i32 = add %3: i32, %4: i32 // Users: %6: (), 
+  let %6: () = call @putint, %5: i32 // Users: 
+  let %7: () = store 0, %ret.addr // Users: 
   jmp label %return // Users: 
 %return:
+  let %9: i32 = load %ret.addr // Users: %10: (), 
+  ret %9: i32 // Users: 
 }

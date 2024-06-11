@@ -17,8 +17,8 @@ extern FILE*        yyin;
 unique_ptr<BaseAST> ast;
 
 int main(int argc, char** argv) {
-    if (argc < 3) {
-        fmt::print("Usage: {} <input file> <output file>\n", argv[0]);
+    if (argc < 2) {
+        fmt::print("Usage: {} <input file> [<output file>]\n", argv[0]);
         return 1;
     } else if (argc > 3) {
         fmt::print("Too many arguments\n");
@@ -62,15 +62,7 @@ int main(int argc, char** argv) {
     std::cout << "------------IR Generation-------------" << std::endl;
     Module module;
     symtab symtab;
-    /*
-    int getint();
-    int getch();
-    int getarray(int a[]);
-    void putint(int num);
-    void putch(int ch);
-    void putarray(int n, int a[]);
-    void starttime();
-    void stoptime();\n";*/
+
     FunctionType *getint_ty = FunctionType::get(Type::getIntegerTy(),{});
     FunctionType *getch_ty = FunctionType::get(Type::getIntegerTy(),{});
     FunctionType *getarray_ty = FunctionType::get(Type::getIntegerTy(),{PointerType::get(Type::getIntegerTy())});
@@ -90,7 +82,12 @@ int main(int argc, char** argv) {
 
     irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
     fstream file;
-    string Filename = argv[2];
+    string Filename;
+    if(argc == 2)
+        //去掉前面的路径 和 后缀
+        Filename = "./target/" + string(argv[1]).substr(string(argv[1]).find_last_of("/\\") + 1, string(argv[1]).find_last_of(".") - string(argv[1]).find_last_of("/\\") - 1) + ".acc";
+    else 
+        Filename = argv[2];
     file.open(Filename, ios::out);
     module.print(file,1);
     

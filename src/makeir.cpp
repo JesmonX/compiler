@@ -33,6 +33,7 @@ void irDeclAST(DeclAST* node, Module* module, symtab* symtable){
 void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irFuncDefAST"<<std::endl;
     auto ty = typehandler(node->func_type);
+    int num = (ty==Type::getIntegerTy())?1:0;
     std::vector<Type*> paramty;
     if(node->func_fparams == nullptr)
         ;
@@ -57,8 +58,9 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
     
     //alloca return value
 
-    PointerType *t = PointerType::get(ty);
-    auto ret_al = AllocaInst::Create(PointerType::get(ty),paramty.size(),bb);
+    //PointerType *t = PointerType::get(ty);
+    auto ret_al = AllocaInst::Create(ty,num,bb);
+    ret_al->setName("ret.addr");
     auto retbb = BasicBlock::Create(func);
     retbb->setName("return");
     auto retinfo = ret_info(ret_al,retbb);
@@ -97,7 +99,7 @@ void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicB
 void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable){
     std::cout<<"debug:irVarDefAST"<<std::endl;
     auto ty = typehandler("int");
-    int nums = node->int_const;
+    int nums = (node->int_const==0)?1:node->int_const;
     if(node->unit){
         int tmp = irConstUnitAST(dc(ConstUnitAST,node->unit),module,symtable);
         nums *= tmp;//数组大小
@@ -165,9 +167,9 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
             //这里需要符号表
             auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);
             auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
-            auto var = symtable->find(lval->getName());
-            auto load = LoadInst::Create(var,bb);
-            auto store = StoreInst::Create(exp,load,bb);
+            //auto var = symtable->find(lval->getName());
+            //auto load = LoadInst::Create(var,bb);
+            auto store = StoreInst::Create(exp,lval,bb);
             return bb;
         }
     case 2://exp
@@ -238,6 +240,8 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
     case 9://return
         {
             auto jp = JumpInst::Create(ret->bb,bb);
+            auto load = LoadInst::Create(ret->addr,ret->bb);
+            auto retinst = RetInst::Create(load,ret->bb);
             return nullptr;
         }
     case 10://return exp
@@ -245,6 +249,9 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
             auto retexp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
             auto store = StoreInst::Create(retexp,ret->addr,bb);
             auto jp = JumpInst::Create(ret->bb,bb);
+            auto load = LoadInst::Create(ret->addr,ret->bb);
+            auto retinst = RetInst::Create(load,ret->bb);
+            
             return nullptr;
         }
     
@@ -257,14 +264,16 @@ Value* irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable
 {
     std::cout<<"debug:irLvalAST"<<std::endl;
     //只是为了一个名字
-    Module* temp = new Module();
-    FunctionType *ty = FunctionType::get(Type::getIntegerTy(),{});
-    auto f = Function::Create(ty,true,node->ident,temp);
-    auto b = BasicBlock::Create(f);
-    auto c = BasicBlock::Create(f);
-    auto res = CallInst::Create((Function*)f,std::vector<Value*>(),b);  
+    //Module* temp = new Module();
+    //FunctionType *ty = FunctionType::get(Type::getIntegerTy(),{});
+    //auto f = Function::Create(ty,true,node->ident,temp);
+    //auto b = BasicBlock::Create(f);
+    //auto c = BasicBlock::Create(f);
+    //auto res = CallInst::Create((Function*)f,std::vector<Value*>(),b);  
     
-    res->setName(node->ident);
+    auto res = symtable->find(node->ident);
+    
+    //res->setName(node->ident);
     irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
     return res;
 }
@@ -422,6 +431,7 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
     case 1:
         {
             return irPrimaryExpAST(dc(PrimaryExpAST,node->primary_exp),module,bb,symtable);
+
         }
     case 2://call
         {
@@ -480,7 +490,8 @@ Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symt
     else if(node->lval)
     {
         auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);
-        return lval;
+        auto load = LoadInst::Create(lval,bb);
+        return load;
     }
     else if(node->exp==nullptr && node->lval == nullptr)
     {
