@@ -32,6 +32,9 @@ class symtab{
         this->cur()[name] = std::make_pair(val,dims);
     }
     Value* find(std::string_view name){
+        if(this->cur().find(name) == this->cur().end()){
+            return nullptr;
+        }
         return (this->cur())[name].first;
     }
     std::vector<int> find_dims(std::string_view name){
@@ -43,10 +46,10 @@ class symtab{
 
 class param_info {
 public:
-    std::string_view name;
+    std::string name;
     Type* type;
     std::vector<int> dim;
-    param_info(std::string_view name, Type* type, std::vector<int> dim) : name(name), type(type), dim(dim) {}
+    param_info(std::string name, Type* type, std::vector<int> dim) : name(name), type(type), dim(dim) {}
 
 };
 
@@ -54,8 +57,8 @@ class param_list {
 public:
     std::vector<std::vector<int>> dims;
     std::vector<Type*> types;
-    std::vector<std::string_view> names;
-    param_list(std::vector<std::vector<int>> dims, std::vector<Type*> types, std::vector<std::string_view> names) : dims(dims), types(types), names(names) {}
+    std::vector<std::string> names;
+    param_list(std::vector<std::vector<int>> dims, std::vector<Type*> types, std::vector<std::string> names) : dims(dims), types(types), names(names) {}
 };
 
 class ret_info {
@@ -82,7 +85,7 @@ void irDeclAST(DeclAST* node, Module* module, symtab* symtable);
 void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb = nullptr);
 std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable);
 param_list irFuncFParamsAST(FuncFParamsAST* node, Module* module, symtab* symtable);
-param_info irFuncFParamAST(FuncFParamAST* node, Module* module, symtab* symtable);
+param_info* irFuncFParamAST(FuncFParamAST* node, Module* module, symtab* symtable);
 BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);
 BasicBlock* irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);
 BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr); 
