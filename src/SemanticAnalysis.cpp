@@ -84,8 +84,9 @@ void SmAnalysis::traverseCompUnitsAST(CompUnitsAST* node) {
     if (node->comp_unit == nullptr)
         traverse_by_node(node->def);
     else {
-        traverse_by_node(node->def);
         traverse_by_node(node->comp_unit);
+        traverse_by_node(node->def);
+        
     }
 }
 

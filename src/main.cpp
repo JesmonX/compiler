@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
     Module module;
     symtab symtab;
 
+
     FunctionType *getint_ty = FunctionType::get(Type::getIntegerTy(),{});
     FunctionType *getch_ty = FunctionType::get(Type::getIntegerTy(),{});
     FunctionType *getarray_ty = FunctionType::get(Type::getIntegerTy(),{PointerType::get(Type::getIntegerTy())});
@@ -80,7 +81,7 @@ int main(int argc, char** argv) {
     Function::Create(starttime_ty,true,"starttime",&module);
     Function::Create(stoptime_ty,true,"stoptime",&module);
 
-    irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
+    
     fstream file,debugfile;
     string Filename;
     if(argc == 2)
@@ -91,6 +92,16 @@ int main(int argc, char** argv) {
     file.open(Filename, ios::out);
     debugfile.open(argv[1], ios::in);
     //file << debugfile.rdbuf();
+    try{
+        irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
+    }
+    catch(const std::runtime_error& e){
+        std::cout << "Exception occurred: " << e.what() << std::endl;
+        std::cout << "--------------------------------------" << std::endl;
+        module.print(std::cout,1);
+        return 1;
+    }
+    
     module.print(file,1);
     
     

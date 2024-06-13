@@ -15,7 +15,7 @@ fn @main( ) -> i32 {
   let %2: i32* = offset i32, %a.addr, [2 < 10] // Users: %3: i32, 
   let %3: i32 = load %2: i32* // Users: %4: (), 
   let %4: () = call @putint, %3: i32 // Users: 
-  jmp label %return // Users: 
-%return:
+  jmp label %6 // Users: 
+%6:
   ret 0 // Users: 
 }

@@ -32,35 +32,35 @@ public:
         symbol_table.func_table["getint"] = getint; 
 
         FuncDefinition getch;
-        putint.func_type             = "int";
+        getch.func_type             = "int";
         symbol_table.func_table["getch"] = getch;
 
         FuncDefinition getarray;
-        putint.func_type             = "int";
-        putint.func_param_table["a"] = pre_def_array;
-        putint.func_param_vector.push_back(pre_def_array);
+        getarray.func_type             = "int";
+        getarray.func_param_table["a"] = pre_def_array;
+        getarray.func_param_vector.push_back(pre_def_array);
         symbol_table.func_table["getarray"] = getarray;
 
         FuncDefinition putch;
-        putint.func_type             = "void";
-        putint.func_param_table["ch"] = pre_def_int;
-        putint.func_param_vector.push_back(pre_def_int);
+        putch.func_type             = "void";
+        putch.func_param_table["ch"] = pre_def_int;
+        putch.func_param_vector.push_back(pre_def_int);
         symbol_table.func_table["putch"] = putch;
 
         FuncDefinition putarray;
-        putint.func_type             = "void";
-        putint.func_param_table["n"] = pre_def_int;
-        putint.func_param_table["a"] = pre_def_array;
-        putint.func_param_vector.push_back(pre_def_int);
-        putint.func_param_vector.push_back(pre_def_array);
+        putarray.func_type             = "void";
+        putarray.func_param_table["n"] = pre_def_int;
+        putarray.func_param_table["a"] = pre_def_array;
+        putarray.func_param_vector.push_back(pre_def_int);
+        putarray.func_param_vector.push_back(pre_def_array);
         symbol_table.func_table["putarray"] = putarray;
 
         FuncDefinition starttime;
-        putint.func_type             = "void";
+        starttime.func_type             = "void";
         symbol_table.func_table["starttime"] = starttime;
 
         FuncDefinition stoptime;
-        putint.func_type             = "void";
+        stoptime.func_type             = "void";
         symbol_table.func_table["stoptime"] = stoptime;
 
         /*

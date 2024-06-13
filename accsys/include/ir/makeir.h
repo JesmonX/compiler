@@ -2,7 +2,7 @@
 #include "ir/ir.h"
 #include <vector>
 
-using allocmap = std::unordered_map<std::string_view,std::pair<Value*,std::vector<int>>>;
+using allocmap = std::unordered_map<std::string,std::pair<Value*,std::vector<int>>>;
 using symtab_stack = std::vector<allocmap>;
 using lvalpair = std::pair<Value*,std::vector<Value*>>;
 
@@ -17,27 +17,31 @@ class symtab{
         return ss.back();
     }
     void enter(){
-        ss.push_back(allocmap(this->cur()));
+        auto newmap = allocmap();
+        for (auto& [name, val] : this->cur()){
+            newmap[name] = val;
+        }
+        ss.push_back(allocmap(newmap));
     }
     void exit(){
         ss.pop_back();
     }
-    void insert_or_assign(std::string_view name, Value* val){
+    void insert_or_assign(std::string name, Value* val){
         this->cur()[name].first = val;
     }
-    void set_dims(std::string_view name, std::vector<int> dims){
+    void set_dims(std::string name, std::vector<int> dims){
         this->cur()[name].second = dims;
     }
-    void set_both(std::string_view name, Value* val, std::vector<int> dims){
+    void set_both(std::string name, Value* val, std::vector<int> dims){
         this->cur()[name] = std::make_pair(val,dims);
     }
-    Value* find(std::string_view name){
+    Value* find(std::string name){
         if(this->cur().find(name) == this->cur().end()){
             return nullptr;
         }
         return (this->cur())[name].first;
     }
-    std::vector<int> find_dims(std::string_view name){
+    std::vector<int> find_dims(std::string name){
         return (this->cur())[name].second;
     }
     
@@ -66,6 +70,7 @@ public:
     Value* addr;//allca
     BasicBlock* bb;
     ret_info(Value* ret, BasicBlock* bb) : addr(ret), bb(bb) {}
+    //ret_info(Value* ret) : addr(ret) {}
 };
 class while_info {
 public:
