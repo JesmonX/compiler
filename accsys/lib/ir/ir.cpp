@@ -229,7 +229,7 @@ AllocaInst::AllocaInst(Type *PointeeType, std::size_t NumElements, Instruction *
     : Instruction(PointerType::get(PointeeType), Instruction::Alloca, 
     { }, InsertBefore),
       AllocatedType(PointeeType), NumElements(NumElements) {
-    assert(!PointeeType->isUnitTy() && "Cannot allocate () type!");
+    //assert(!PointeeType->isUnitTy() && "Cannot allocate () type!");
 }
 
 AllocaInst::AllocaInst(Type *PointeeType, std::size_t NumElements, BasicBlock *InsertAtEnd)

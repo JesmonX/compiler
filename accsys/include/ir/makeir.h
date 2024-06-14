@@ -80,29 +80,47 @@ public:
     while_info(BasicBlock* entry, BasicBlock* body, BasicBlock* end) : entry(entry), body(body), end(end) {}
 };
 
+class global_info {
+public:
+    std::vector<Value*> global_vars;
+    std::vector<Value*> global_vals;
+    std::vector<std::vector<int>> global_dims;
+    bool is_set = 0;
+    global_info(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<int>> global_dims) : global_vars(global_vars), global_vals(global_vals),global_dims(global_dims) {}
+};
 std::vector<std::optional<std::size_t>> get_bounds(std::vector<int> dims);
 
-void irCompUnitAST(CompUnitAST* node, Module* module, symtab* symtable);
-void irCompUnitsAST(CompUnitsAST* node, Module* module, symtab* symtable);
-void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable);
-void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-void irDeclAST(DeclAST* node, Module* module, symtab* symtable);
-void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb = nullptr);
-std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable);
-param_list irFuncFParamsAST(FuncFParamsAST* node, Module* module, symtab* symtable);
-param_info* irFuncFParamAST(FuncFParamAST* node, Module* module, symtab* symtable);
-BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);
-BasicBlock* irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);
-BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr); 
-Value* irExpAST(ExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-lvalpair irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-std::vector<Value*> irLvalUnitAST(LvalUnitAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-std::vector<Value*> irFuncRParamsAST(FuncRParamsAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irEqExpAST(EqExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irLAndExpAST(LAndExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
-Value* irLOrExpAST(LOrExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+class MakeIR{
+    public:
+        bool short_circuit = 0;
+        global_info global;
+        //construct
+        MakeIR(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<int>> global_dims) 
+        : global(global_info(global_vars, global_vals,global_dims)) {}
+    
+
+        void irCompUnitAST(CompUnitAST* node, Module* module, symtab* symtable);
+        void irCompUnitsAST(CompUnitsAST* node, Module* module, symtab* symtable);
+        void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable);
+        void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        void irDeclAST(DeclAST* node, Module* module, symtab* symtable);
+        void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb = nullptr);
+        std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable);
+        param_list irFuncFParamsAST(FuncFParamsAST* node, Module* module, symtab* symtable);
+        param_info* irFuncFParamAST(FuncFParamAST* node, Module* module, symtab* symtable);
+        BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);
+        BasicBlock* irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);
+        BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr); 
+        Value* irExpAST(ExpAST* node, Module* module, BasicBlock* bb, symtab* symtable,BasicBlock* truebb = nullptr, BasicBlock* falsebb = nullptr);
+        lvalpair irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        std::vector<Value*> irLvalUnitAST(LvalUnitAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        std::vector<Value*> irFuncRParamsAST(FuncRParamsAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irEqExpAST(EqExpAST* node, Module* module, BasicBlock* bb, symtab* symtable);
+        Value* irLAndExpAST(LAndExpAST* node, Module* module, BasicBlock* bb, symtab* symtable, BasicBlock* truebb = nullptr, BasicBlock* falsebb = nullptr);
+        Value* irLOrExpAST(LOrExpAST* node, Module* module, BasicBlock* bb, symtab* symtable, BasicBlock* truebb = nullptr, BasicBlock* falsebb = nullptr);
+};

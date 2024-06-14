@@ -91,9 +91,13 @@ int main(int argc, char** argv) {
         Filename = argv[2];
     file.open(Filename, ios::out);
     debugfile.open(argv[1], ios::in);
+    std::vector<Value*> global_vars;
+    std::vector<Value*> global_vals;
+    std::vector<std::vector<int>> global_dims;
+    MakeIR makeir(global_vars, global_vals, global_dims);
     //file << debugfile.rdbuf();
     try{
-        irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
+        makeir.irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);
     }
     catch(const std::runtime_error& e){
         std::cout << "Exception occurred: " << e.what() << std::endl;

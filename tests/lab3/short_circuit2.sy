@@ -13,7 +13,7 @@ int main() {
     if (a == 10 || add(array)) {
         putint(array[0]);
     } else {
-        putint(array[0]);
+        putint(1);
     }
     return 0;
 }

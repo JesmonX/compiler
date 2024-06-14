@@ -7,12 +7,12 @@
 #define dc(x,n) dynamic_cast<x*>(n.get())
 
 
-void irCompUnitAST(CompUnitAST* node, Module* module, symtab* symtable){
+void MakeIR::irCompUnitAST(CompUnitAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irCompUnitAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     irCompUnitsAST(dc(CompUnitsAST,node->comp_units),module,symtable);
 }
 
-void irCompUnitsAST(CompUnitsAST* node, Module* module, symtab* symtable){
+void MakeIR::irCompUnitsAST(CompUnitsAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irCompUnitsAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
 
     if(node->comp_unit)
@@ -22,7 +22,7 @@ void irCompUnitsAST(CompUnitsAST* node, Module* module, symtab* symtable){
     
 }
 
-void irDeclAST(DeclAST* node, Module* module, symtab* symtable){
+void MakeIR::irDeclAST(DeclAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irDeclAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
 
     if(node->func_def)
@@ -35,11 +35,10 @@ void irDeclAST(DeclAST* node, Module* module, symtab* symtable){
         irMulVarDefAST(dc(MulVarDefAST,node->var_def),module,symtable,nullptr);
 }
 
-void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
+void MakeIR::irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irFuncDefAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     auto ty = typehandler(node->func_type);
     int num = (ty==Type::getIntegerTy())?1:0;
-    std::cout<<"num "<<num<<std::endl;
     param_list paramty = param_list(std::vector<std::vector<int>>(),std::vector<Type*>(),std::vector<std::string>());
     
     if(node->func_fparams)
@@ -49,6 +48,17 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
     auto bb = BasicBlock::Create(func);
     //basic block
     bb->setName("entry");
+    if(this->global.is_set == 0){
+        for(int i = 0;i<this->global.global_vars.size();i++)
+        {
+            if(this->global.global_vals[i] != nullptr)
+               auto store = StoreInst::Create(this->global.global_vals[i],this->global.global_vars[i],bb);
+        } 
+        this->global.is_set = 1;
+    }
+
+
+
     auto ret_al = AllocaInst::Create(ty,num,bb);
     //ret_al->setName("ret.addr");
     auto retbb = BasicBlock::Create(func);
@@ -81,23 +91,17 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
             //inst[i][0] = AllocaInst::Create(paramty.types[i],size,bb);
             //name + .addr
             
-            std::cerr<<"addrname"<<addrname<<std::endl;
             if(paramty.types[i]->isIntegerTy())
             {
                 func->getArg(i)->setName(paramty.names[i]);
                 auto inst = AllocaInst::Create(paramty.types[i],size,bb);
-                if(inst == nullptr)
-                    std::cerr<<"null"<<std::endl;
+
                 inst->setName(addrname);
                 auto store = StoreInst::Create(func->getArg(i),inst,bb);
                 //update symbol table
                 symtable->insert_or_assign(addrname,inst);
                 symtable->set_dims(addrname,paramty.dims[i]);
-                //symtable->set_both(addrname,inst,paramty.dims[i]);
-                for(auto i : symtable->cur())
-                {
-                    std::cerr<<i.first<<std::endl;
-                }
+
             }
             else
             {
@@ -105,10 +109,8 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
                 std::cerr<<"array"<<std::endl;
                 if(symtable->find(addrname) == nullptr)
                 {
-                    std::cerr<<"null"<<std::endl;
                     auto temp = paramty.dims[i];
                     temp[0] = 1000000;///
-                    std::cerr<<"size"<<temp.size()<<std::endl;
                     symtable->set_both(addrname,func->getArg(i),temp);
                 }
                 //auto ptr = symtable->find(paramty.names[i]);
@@ -125,7 +127,7 @@ void irFuncDefAST(FuncDefAST* node, Module* module, symtab* symtable){
     symtable->exit();
 }
 
-param_list irFuncFParamsAST(FuncFParamsAST* node,Module* module,symtab* symtable){
+param_list MakeIR::irFuncFParamsAST(FuncFParamsAST* node,Module* module,symtab* symtable){
     std::cout<<"debug:irFuncFParamsAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     std::vector<std::vector<int>> dims;
     std::vector<Type*> types;
@@ -139,7 +141,6 @@ param_list irFuncFParamsAST(FuncFParamsAST* node,Module* module,symtab* symtable
         types.insert(types.begin(),tmp.types.begin(),tmp.types.end());
         names.insert(names.begin(),tmp.names.begin(),tmp.names.end());
     }
-    std::cerr<<"dim "<<param->dim.size()<<std::endl;
     dims.push_back(param->dim);
     types.push_back(param->type);
     names.push_back(param->name);
@@ -150,7 +151,7 @@ param_list irFuncFParamsAST(FuncFParamsAST* node,Module* module,symtab* symtable
 //size..alloca
 //type..alloca ..vector
 
-param_info* irFuncFParamAST(FuncFParamAST* node,Module* module,symtab* symtable){
+param_info* MakeIR::irFuncFParamAST(FuncFParamAST* node,Module* module,symtab* symtable){
     std::cout<<"debug:irFuncFParamAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     std::vector<int> dim;
     if(node->unit)
@@ -161,12 +162,11 @@ param_info* irFuncFParamAST(FuncFParamAST* node,Module* module,symtab* symtable)
     if(node->type!=0)
         type = PointerType::get(Type::getIntegerTy());
     auto name = node->ident;
-    std::cerr<<"dim "<<dim.size()<<std::endl;
     auto res = new param_info(name,type,dim);
     return res;
 }
 
-void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb){
+void MakeIR::irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb){
     std::cout<<"debug:irMulVarDefAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     if(node->var_def)
         irVarDefAST(dc(VarDefAST,node->var_def),module,bb,symtable);
@@ -174,7 +174,7 @@ void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicB
         irMulVarDefAST(dc(MulVarDefAST,node->mul_var_def),module,symtable,bb);
 }
 
-void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable){
+void MakeIR::irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable){
     std::cout<<"debug:irVarDefAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     auto ty = typehandler("int");
     int nums = 1;
@@ -187,16 +187,28 @@ void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtab
     if(node->isgloble)
     {
         auto var = GlobalVariable::Create(ty,nums,false,node->ident,module);
-        var->setName(node->ident);
+        var->setName(node->ident+".addr");
         symtable->set_both(node->ident+".addr",var,units);
+
+        if(node->exp){
+            auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
+            this->global.global_vals.push_back(exp);
+        }
+        else { 
+            auto exp = nullptr;
+            this->global.global_vals.push_back(exp);
+        }
+        this->global.global_vars.push_back(var);
+        
+        this->global.global_dims.push_back(units);
+
+        //auto storevar = StoreInst::Create(exp,var,module->getFunctionList().front().getEntryBlock());
     }
     else
     {
         auto var = AllocaInst::Create(ty,nums,bb);
         var->setName(node->ident+".addr");
         symtable->set_both(std::string(var->getName()),var,units);
-        std::cout <<"unit size"<<units.size()<<std::endl;
-        std::cout<<var->getName()<<std::endl;
         if(node->exp){
             auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
             auto storevar = StoreInst::Create(exp,var,bb);
@@ -205,7 +217,7 @@ void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtab
     
 }
 
-std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable){
+std::vector<int> MakeIR::irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable){
     std::cout<<"debug:irConstUnitAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     std::vector<int> res;
     res.push_back(node->int_const);
@@ -217,7 +229,7 @@ std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symt
     return res;
 }
 
-BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
+BasicBlock* MakeIR::irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
     std::cout<<"debug:irBlockAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     
     if(node->item)
@@ -229,7 +241,7 @@ BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* s
     return bb;
 }
 
-BasicBlock* irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
+BasicBlock* MakeIR::irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
     std::cout<<"debug:irBlockItemAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     BasicBlock* res = bb;
     if(node->block_item)
@@ -242,39 +254,27 @@ BasicBlock* irBlockItemAST(BlockItemAST* node, Module* module, BasicBlock* bb, s
     return res;
 }
 
-BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
+BasicBlock* MakeIR::irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi){
     std::cout<<"debug:irStmtAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     switch (node->type){
     case 1://assign
         {
             //load 的ptr是vardef 的alloca的指针 
             //这里需要符号表
-            if(node->lval == nullptr)
-                std::cerr<<"null"<<std::endl;
             auto lval = irLvalAST(dc(LvalAST,node->lval),module,bb,symtable);//addr
             
-            if(node->exp == nullptr)
-                std::cerr<<"null"<<std::endl;
             auto exp = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
 
             if(lval.second.size() != 0)
             {
-                std::cerr<<lval.second.size()<<std::endl;
-                std::cerr<<"123"<<std::endl;
-                std::cout<<"lval "<<lval.first->getName()<<std::endl;
                 auto addrname = std::string(lval.first->getName());
                 auto vec = symtable->find_dims(addrname);
-                std::cout<<"cev"<<vec.size()<<std::endl;
                 auto bound = get_bounds(vec);
-                std::cerr<<"123"<<std::endl;
-                std::cout<<"bound"<<bound.size()<<std::endl;
-                std::cerr<<"123"<<std::endl;
-                std::cout<<"lval"<<lval.second.size()<<std::endl;
-                std::cerr<<"123"<<std::endl;
+                
                 auto offset = OffsetInst::Create(Type::getIntegerTy(),lval.first,lval.second,bound,bb);
-                std::cerr<<"123"<<std::endl;
+                
                 auto store = StoreInst::Create(exp,offset,bb);
-                std::cerr<<"123"<<std::endl;
+                
             }
             else 
             {
@@ -299,12 +299,17 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
     case 4://if
         {
             
-            auto cond = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
+            
             auto func = bb->getParent();
             auto truebb = BasicBlock::Create(func,ret->bb);
             //auto falsebb = BasicBlock::Create(func);
             auto endbb = BasicBlock::Create(func,ret->bb);
-            auto br = BranchInst::Create(truebb,endbb,cond,bb);
+            auto cond = irExpAST(dc(ExpAST,node->exp),module,bb,symtable,truebb,endbb);
+            if(!short_circuit){
+                auto br = BranchInst::Create(truebb,endbb,cond,bb);
+            }
+            else 
+                this->short_circuit = 0;
             auto tempbb = irStmtAST(dc(StmtAST,node->stmt),module,truebb,symtable,ret);
             if(tempbb != nullptr)
                 auto jp = JumpInst::Create(endbb,tempbb);
@@ -313,14 +318,18 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
         }
     case 5://if else
         {
-            auto cond = irExpAST(dc(ExpAST,node->exp),module,bb,symtable);
+            
             auto func = bb->getParent();
             auto truebb = BasicBlock::Create(func,ret->bb);
             auto falsebb = BasicBlock::Create(func,ret->bb);
             auto endbb = BasicBlock::Create(func,ret->bb);
-            
-            auto br = BranchInst::Create(truebb,falsebb,cond,bb);
-            
+            auto cond = irExpAST(dc(ExpAST,node->exp),module,bb,symtable,truebb,falsebb);
+            if(!short_circuit){
+                auto br = BranchInst::Create(truebb,falsebb,cond,bb);
+            }
+            else 
+                this->short_circuit = 0;
+                
             auto tempbb1 = irStmtAST(dc(StmtAST,node->stmt),module,truebb,symtable,ret);
             if(tempbb1 != nullptr)
                 auto jp1 = JumpInst::Create(endbb,tempbb1);
@@ -338,9 +347,13 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
             auto endbb = BasicBlock::Create(func,ret->bb);
             auto whileinfo = while_info(entrybb,truebb,endbb);
             auto jp = JumpInst::Create(entrybb,bb);
-            auto cond = irExpAST(dc(ExpAST,node->exp),module,entrybb,symtable);
-
-            auto br = BranchInst::Create(truebb,endbb,cond,entrybb);
+            auto cond = irExpAST(dc(ExpAST,node->exp),module,entrybb,symtable,truebb,endbb);
+            if(!short_circuit){
+                auto br = BranchInst::Create(truebb,endbb,cond,entrybb);
+            }
+            else 
+                this->short_circuit = 0;
+            
             auto tempbb = irStmtAST(dc(StmtAST,node->stmt),module,truebb,symtable,ret,&whileinfo);
             if(tempbb != nullptr)
                 auto jp2 = JumpInst::Create(entrybb,tempbb);
@@ -382,18 +395,10 @@ BasicBlock* irStmtAST(StmtAST* node, Module* module, BasicBlock* bb, symtab* sym
     
 }
 
-lvalpair irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+lvalpair MakeIR::irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irLvalAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
-    std::cerr<<"lval"<<node->ident<<std::endl;
-    std::cerr<<"lval"<<node->ident+".addr"<<std::endl;
     auto res = symtable->find(node->ident+".addr");
-    for(auto i : symtable->cur())
-    {
-        std::cerr<<i.first<<std::endl;
-    }
-    if(res == nullptr)
-        std::cerr<<"null"<<std::endl;
     std::vector<Value*> units;
     if(node->unit)
         units = irLvalUnitAST(dc(LvalUnitAST,node->unit),module,bb,symtable);
@@ -403,81 +408,94 @@ lvalpair irLvalAST(LvalAST* node, Module* module, BasicBlock* bb, symtab* symtab
 
 
 
-Value* irExpAST(ExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irExpAST(ExpAST* node, Module* module, BasicBlock* bb, symtab* symtable, BasicBlock* truebb, BasicBlock* falsebb)
 {
     std::cout<<"debug:irExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
 
-    if(node->lorexp == nullptr)
-        std::cerr<<"null"<<std::endl;
-    return irLOrExpAST(dc(LOrExpAST,node->lorexp),module,bb,symtable);
+    return irLOrExpAST(dc(LOrExpAST,node->lorexp),module,bb,symtable,truebb,falsebb);
 }
 
 
-Value* irLOrExpAST(LOrExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irLOrExpAST(LOrExpAST* node, Module* module, BasicBlock* bb, symtab* symtable, BasicBlock* truebb, BasicBlock* falsebb)
 {
     std::cout<<"debug:irLOrExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
-    if(node->land_exp == nullptr)
-        std::cerr<<"null"<<std::endl;
+    
     if(node->lor_exp)
     {
-        auto l = irLOrExpAST(dc(LOrExpAST,node->lor_exp),module,bb,symtable);
-        //short cut
-        auto debug = l->getType();
-        std::cout <<"[DEBUG]"<< debug->getTypeID() << std::endl;
-        if(static_cast<ConstantInt*>(l)->getValue() == 1)
-            return l;
-        
-        auto r = irLAndExpAST(dc(LAndExpAST,node->land_exp),module,bb,symtable);
         auto ty = typehandler("int");
-        auto res = BinaryInst::Create(BinaryInst::Or,l,r,ty,bb);
-        std::cout<<"type:lor"<<std::endl;
-        std::cout<<r->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getType()->getTypeID()<<std::endl;
+        this->short_circuit = 1;
+        auto fbb = BasicBlock::Create(bb->getParent(),truebb);
+        fbb->setName("fbb");
+        auto ffbb = BasicBlock::Create(bb->getParent(),truebb);
+        ffbb->setName("ffbb");
+        auto fffbb = BasicBlock::Create(bb->getParent(),truebb);
+        fffbb->setName("fffbb");
+
+        auto l = irLOrExpAST(dc(LOrExpAST,node->lor_exp),module,bb,symtable,truebb,fbb);
+        if(!bb->back().isTerminator() && bb->size()){
+            auto jp = JumpInst::Create(fbb,bb);
+            //l = ConstantInt::Create(1);
+        }
+            
+        
+        
+        auto br = BranchInst::Create(truebb,ffbb,l,fbb);
+        
+        
+        auto r = irLAndExpAST(dc(LAndExpAST,node->land_exp),module,ffbb,symtable,fffbb,falsebb);
+        if(!ffbb->back().isTerminator() && ffbb->size()){
+            auto jp = JumpInst::Create(fffbb,ffbb);
+            //r = ConstantInt::Create(1);
+        }
+        
+        auto res = BinaryInst::Create(BinaryInst::Or,l,r,ty,fffbb);
+        auto br2 = BranchInst::Create(truebb,falsebb,res,fffbb);
         return res;
     }
     else
-        return irLAndExpAST(dc(LAndExpAST,node->land_exp),module,bb,symtable);
+        return irLAndExpAST(dc(LAndExpAST,node->land_exp),module,bb,symtable,truebb,falsebb);
 }
 
-Value* irLAndExpAST(LAndExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irLAndExpAST(LAndExpAST* node, Module* module, BasicBlock* bb, symtab* symtable, BasicBlock* truebb, BasicBlock* falsebb)
 {
     std::cout<<"debug:irLAndExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
-    if(node->eq_exp == nullptr)
-        std::cerr<<"null"<<std::endl;
     if(node->land_exp)
     {
-        auto l = irLAndExpAST(dc(LAndExpAST,node->land_exp),module,bb,symtable);
-
-        if(static_cast<ConstantInt*>(l)->getValue() == 0)
-            return l;
-
-        auto r = irEqExpAST(dc(EqExpAST,node->eq_exp),module,bb,symtable);
+        this->short_circuit = 1;
+        auto tbb = BasicBlock::Create(bb->getParent(),falsebb);
+        tbb->setName("tbb");
+        auto ttbb = BasicBlock::Create(bb->getParent(),falsebb);
+        ttbb->setName("ttbb");
+        auto l = irLAndExpAST(dc(LAndExpAST,node->land_exp),module,bb,symtable,tbb,falsebb);
+        if(!bb->back().isTerminator() && bb->size()){
+            auto jp = JumpInst::Create(tbb,bb);
+            //l = ConstantInt::Create(0);
+        }
+            
+       
+        auto br = BranchInst::Create(ttbb,falsebb,l,tbb);
+        
+        auto r = irEqExpAST(dc(EqExpAST,node->eq_exp),module,ttbb,symtable);
+        
         auto ty = typehandler("int");
-        auto res = BinaryInst::Create(BinaryInst::And,l,r,ty,bb);
-        std::cout<<"type:land"<<std::endl;
-        std::cout<<r->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getType()->getTypeID()<<std::endl;
+        auto res = BinaryInst::Create(BinaryInst::And,l,r,ty,ttbb);
+        auto br2 = BranchInst::Create(truebb,falsebb,res,ttbb);
+
         return res;
     }
     else
         return irEqExpAST(dc(EqExpAST,node->eq_exp),module,bb,symtable);
 }
 
-Value* irEqExpAST(EqExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irEqExpAST(EqExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irEqExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
-    if(node->rel_exp == nullptr)
-        std::cerr<<"null"<<std::endl;
+
     if(node->eq_exp)
     {
         auto l = irEqExpAST(dc(EqExpAST,node->eq_exp),module,bb,symtable);
         auto r = irRelExpAST(dc(RelExpAST,node->rel_exp),module,bb,symtable);
         auto ty = typehandler("int");
-        std::cout<<"type:eq"<<std::endl;
-        std::cout<<r->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getName()<<std::endl;
-        std::cout<<l->getValueID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Eq,l,r,ty,bb);
         else
@@ -487,7 +505,7 @@ Value* irEqExpAST(EqExpAST* node, Module* module, BasicBlock* bb, symtab* symtab
         return irRelExpAST(dc(RelExpAST,node->rel_exp),module,bb,symtable);
 }
 
-Value* irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irRelExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     if(node->add_exp == nullptr)
@@ -497,9 +515,6 @@ Value* irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto l = irRelExpAST(dc(RelExpAST,node->rel_exp),module,bb,symtable);
         auto r = irAddExpAST(dc(AddExpAST,node->add_exp),module,bb,symtable);
         auto ty = typehandler("int");
-        std::cout<<"type:rel"<<std::endl;
-        std::cout<<r->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getType()->getTypeID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Lt,l,r,ty,bb);
         else if(node->op_type == 2)
@@ -513,7 +528,7 @@ Value* irRelExpAST(RelExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         return irAddExpAST(dc(AddExpAST,node->add_exp),module,bb,symtable);
 }
 
-Value* irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irAddExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     if(node->mul_exp == nullptr)
@@ -524,9 +539,7 @@ Value* irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto l = irAddExpAST(dc(AddExpAST,node->add_exp),module,bb,symtable);
         auto r = irMulExpAST(dc(MulExpAST,node->mul_exp),module,bb,symtable);
         auto ty = typehandler("int");
-        std::cout<<"type:add"<<std::endl;
-        std::cout<<r->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getType()->getTypeID()<<std::endl;
+
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Add,l,r,ty,bb);
         else
@@ -536,7 +549,7 @@ Value* irAddExpAST(AddExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         return irMulExpAST(dc(MulExpAST,node->mul_exp),module,bb,symtable);
 }
 
-Value* irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irMulExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     if(node->unary_exp == nullptr)
@@ -546,9 +559,6 @@ Value* irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         auto l = irMulExpAST(dc(MulExpAST,node->mul_exp),module,bb,symtable);
         auto r = irUnaryExpAST(dc(UnaryExpAST,node->unary_exp),module,bb,symtable);
         auto ty = typehandler("int");
-        std::cout<<"type:mul"<<std::endl;
-        std::cout<<r->getType()->getTypeID()<<std::endl;
-        std::cout<<l->getType()->getTypeID()<<std::endl;
         if(node->op_type == 1)
             return BinaryInst::Create(BinaryInst::Mul,l,r,ty,bb);
         else if(node->op_type == 2)
@@ -560,7 +570,7 @@ Value* irMulExpAST(MulExpAST* node, Module* module, BasicBlock* bb, symtab* symt
         return irUnaryExpAST(dc(UnaryExpAST,node->unary_exp),module,bb,symtable);
 }
 
-Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irUnaryExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     switch (node->type)
@@ -583,6 +593,7 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
     case 3://call and args
         {
             auto args = irFuncRParamsAST(dc(FuncRParamsAST,node->params),module,bb,symtable);
+
             auto func = module->getFunction(node->ident);
             auto call = CallInst::Create(func,args,bb);
             //for(int i = 0;i<args.size();i++)
@@ -597,10 +608,7 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
             auto exp = irUnaryExpAST(dc(UnaryExpAST,node->unary_exp),module,bb,symtable);
             auto ty = typehandler("int");
             auto zero = ConstantInt::Create(0);
-            std::cout<<"type:unary"<<std::endl;
-            
-            std::cout<<exp->getType()->getTypeID()<<std::endl;
-            std::cout<<zero->getType()->getTypeID()<<std::endl;
+
             if(node->op_type == 1)
                 return BinaryInst::Create(BinaryInst::Add,zero,exp,ty,bb);
             else if(node->op_type == 2)
@@ -611,7 +619,7 @@ Value* irUnaryExpAST(UnaryExpAST* node, Module* module, BasicBlock* bb, symtab* 
     }
 }
 
-std::vector<Value*> irFuncRParamsAST(FuncRParamsAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+std::vector<Value*> MakeIR::irFuncRParamsAST(FuncRParamsAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irFuncRParamsAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     std::vector<Value*> res;
@@ -625,7 +633,7 @@ std::vector<Value*> irFuncRParamsAST(FuncRParamsAST* node, Module* module, Basic
     return res;
 }
 
-Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+Value* MakeIR::irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irPrimaryExpAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
 
@@ -637,10 +645,8 @@ Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symt
         if(lval.first == nullptr) std::cerr<<"null"<<std::endl;
         if(lval.second.size() ==  get_bounds(symtable->find_dims(std::string(lval.first->getName()))).size() && lval.second.size() != 0)
         {
-            std::cerr<<"1" <<std::endl;
             auto bound = get_bounds(symtable->find_dims(std::string(lval.first->getName())));
-            std::cout<<"bound"<<bound.size()<<std::endl;
-            std::cout<<"lval"<<lval.second.size()<<std::endl;
+
             auto offset = OffsetInst::Create(Type::getIntegerTy(),lval.first,lval.second,bound,bb);
             auto load = LoadInst::Create(offset,bb);
             return load;
@@ -649,28 +655,24 @@ Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symt
         
         else if(lval.second.size() < get_bounds(symtable->find_dims(std::string(lval.first->getName()))).size())
         {
-            std::cerr<<"2" <<std::endl;
             if(lval.second.size() == 0)
             {
                 return lval.first;
             }
             
-            std::cerr<<"lt"<<std::endl;
             auto bound = get_bounds(symtable->find_dims(std::string(lval.first->getName())));
-            bound.resize(lval.second.size(),std::nullopt);
-            //auto temp = lval.second;
-            //if(bound.size() > temp.size())
-            //{
-            //    for(int i = 0;i<bound.size()-temp.size();i++)
-            //        temp.insert(temp.end(),ConstantUnit::Create());
-            //}
-            std::cout<<"bound"<<bound.size()<<std::endl;
-            std::cout<<"lval"<<lval.second.size()<<std::endl;
+            if(bound.size() > lval.second.size())
+            {
+                for(int i = 0;i<bound.size()-lval.second.size();i++)
+                    lval.second.insert(lval.second.end(),ConstantInt::Create(0));
+            }
+
+
             auto offset = OffsetInst::Create(Type::getIntegerTy(),lval.first,lval.second,bound,bb);
             return offset;
         }
         else {
-            std::cerr<<"3" <<std::endl;
+
             auto load = LoadInst::Create(lval.first,bb);
             
             return load;
@@ -683,11 +685,10 @@ Value* irPrimaryExpAST(PrimaryExpAST* node, Module* module, BasicBlock* bb, symt
         std::cout<<node->int_const<<std::endl;
         return constint;
     }
-    std::cerr<<"null"<<std::endl;
     return nullptr;
 }
 
-std::vector<Value*> irLvalUnitAST(LvalUnitAST* node, Module* module, BasicBlock* bb, symtab* symtable)
+std::vector<Value*> MakeIR::irLvalUnitAST(LvalUnitAST* node, Module* module, BasicBlock* bb, symtab* symtable)
 {
     std::cout<<"debug:irLvalUnitAST"<<std::endl; if(node==nullptr) std::cerr<<"null"<<std::endl;
     std::vector<Value*> res;
