@@ -2,8 +2,11 @@
 #include "ir/ir.h"
 #include <vector>
 
+//symtab for values and dimensions
 using allocmap = std::unordered_map<std::string,std::pair<Value*,std::vector<int>>>;
+//stack of symtabs
 using symtab_stack = std::vector<allocmap>;
+//pair of value and vector of values(dims)
 using lvalpair = std::pair<Value*,std::vector<Value*>>;
 
 
@@ -70,7 +73,6 @@ public:
     Value* addr;//allca
     BasicBlock* bb;
     ret_info(Value* ret, BasicBlock* bb) : addr(ret), bb(bb) {}
-    //ret_info(Value* ret) : addr(ret) {}
 };
 class while_info {
 public:

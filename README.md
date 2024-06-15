@@ -1,10 +1,14 @@
 
 ```bash
-cmake -B build -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+#build
+cmake -B build 
 cmake --build build
-
+#test
 cd tests
-python test.py ./../build/compiler lab1
-python test.py ./../build/compiler lab2
-python test.py ../build/compiler lab3 --executor_path=./accipit-linux-x86_64-gnu
+./test.sh #for lab3
+
+#generate .acc
+$ pwd
+xxx/compiler$
+./tgt.sh xxxx  #generate xx.acc and test it
 ```

@@ -1,6 +1,5 @@
 # Build Directory
 build/
-target/
 # Editor Configs
 .vscode/
 .idea/
