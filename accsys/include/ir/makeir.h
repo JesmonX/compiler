@@ -3,7 +3,7 @@
 #include <vector>
 
 //symtab for values and dimensions
-using allocmap = std::unordered_map<std::string,std::pair<Value*,std::vector<int>>>;
+using allocmap = std::unordered_map<std::string,std::pair<Value*,std::vector<std::optional<std::size_t>>>>;
 //stack of symtabs
 using symtab_stack = std::vector<allocmap>;
 //pair of value and vector of values(dims)
@@ -32,10 +32,10 @@ class symtab{
     void insert_or_assign(std::string name, Value* val){
         this->cur()[name].first = val;
     }
-    void set_dims(std::string name, std::vector<int> dims){
+    void set_dims(std::string name, std::vector<std::optional<std::size_t>> dims){
         this->cur()[name].second = dims;
     }
-    void set_both(std::string name, Value* val, std::vector<int> dims){
+    void set_both(std::string name, Value* val, std::vector<std::optional<std::size_t>> dims){
         this->cur()[name] = std::make_pair(val,dims);
     }
     Value* find(std::string name){
@@ -44,7 +44,7 @@ class symtab{
         }
         return (this->cur())[name].first;
     }
-    std::vector<int> find_dims(std::string name){
+    std::vector<std::optional<std::size_t>> find_dims(std::string name){
         return (this->cur())[name].second;
     }
     
@@ -55,17 +55,17 @@ class param_info {
 public:
     std::string name;
     Type* type;
-    std::vector<int> dim;
-    param_info(std::string name, Type* type, std::vector<int> dim) : name(name), type(type), dim(dim) {}
+    std::vector<std::optional<std::size_t>> dim;
+    param_info(std::string name, Type* type, std::vector<std::optional<std::size_t>> dim) : name(name), type(type), dim(dim) {}
 
 };
 
 class param_list {
 public:
-    std::vector<std::vector<int>> dims;
+    std::vector<std::vector<std::optional<std::size_t>>> dims;
     std::vector<Type*> types;
     std::vector<std::string> names;
-    param_list(std::vector<std::vector<int>> dims, std::vector<Type*> types, std::vector<std::string> names) : dims(dims), types(types), names(names) {}
+    param_list(std::vector<std::vector<std::optional<std::size_t>>> dims, std::vector<Type*> types, std::vector<std::string> names) : dims(dims), types(types), names(names) {}
 };
 
 class ret_info {
@@ -86,18 +86,18 @@ class global_info {
 public:
     std::vector<Value*> global_vars;
     std::vector<Value*> global_vals;
-    std::vector<std::vector<int>> global_dims;
+    std::vector<std::vector<std::optional<std::size_t>>> global_dims;
     bool is_set = 0;
-    global_info(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<int>> global_dims) : global_vars(global_vars), global_vals(global_vals),global_dims(global_dims) {}
+    global_info(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<std::optional<std::size_t>>> global_dims) : global_vars(global_vars), global_vals(global_vals),global_dims(global_dims) {}
 };
-std::vector<std::optional<std::size_t>> get_bounds(std::vector<int> dims);
+std::vector<std::optional<std::size_t>> get_bounds(std::vector<std::optional<std::size_t>> dims);
 
 class MakeIR{
     public:
         bool short_circuit = 0;
         global_info global;
         //construct
-        MakeIR(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<int>> global_dims) 
+        MakeIR(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<std::optional<std::size_t>>> global_dims) 
         : global(global_info(global_vars, global_vals,global_dims)) {}
     
 
@@ -107,7 +107,7 @@ class MakeIR{
         void irVarDefAST(VarDefAST* node, Module* module, BasicBlock* bb, symtab* symtable);
         void irDeclAST(DeclAST* node, Module* module, symtab* symtable);
         void irMulVarDefAST(MulVarDefAST* node, Module* module, symtab* symtable, BasicBlock* bb = nullptr);
-        std::vector<int> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable);
+        std::vector<std::optional<std::size_t>> irConstUnitAST(ConstUnitAST* node, Module* module, symtab* symtable);
         param_list irFuncFParamsAST(FuncFParamsAST* node, Module* module, symtab* symtable);
         param_info* irFuncFParamAST(FuncFParamAST* node, Module* module, symtab* symtable);
         BasicBlock* irBlockAST(BlockAST* node, Module* module, BasicBlock* bb, symtab* symtable, ret_info* ret, while_info* whi = nullptr);

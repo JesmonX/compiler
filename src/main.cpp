@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
 
     std::vector<Value*> global_vars;
     std::vector<Value*> global_vals;
-    std::vector<std::vector<int>> global_dims;
+    std::vector<std::vector<std::optional<std::size_t>>> global_dims;
     MakeIR makeir(global_vars, global_vals, global_dims);
     try{
         makeir.irCompUnitAST(static_cast<CompUnitAST*>(ast.get()), &module, &symtab);

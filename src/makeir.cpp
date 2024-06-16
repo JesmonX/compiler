@@ -41,7 +41,7 @@ void MakeIR::irFuncDefAST(FuncDefAST *node, Module *module, symtab *symtable)
     std::cout << "debug:irFuncDefAST" << std::endl;
     auto ty = typehandler(node->func_type);
     int num = (ty == Type::getIntegerTy()) ? 1 : 0;
-    param_list paramty = param_list(std::vector<std::vector<int>>(), std::vector<Type *>(), std::vector<std::string>());
+    param_list paramty = param_list(std::vector<std::vector<std::optional<std::size_t>>>(), std::vector<Type *>(), std::vector<std::string>());
 
     if (node->func_fparams)
         paramty = irFuncFParamsAST(dc(FuncFParamsAST, node->func_fparams), module, symtable);
@@ -83,7 +83,7 @@ void MakeIR::irFuncDefAST(FuncDefAST *node, Module *module, symtab *symtable)
             // alloca and store param
             int size = 1;
             for (auto j : paramty.dims[i])
-                size *= j; // size of this param
+                size *= j.value(); // size of this param
 
 
             if (paramty.types[i]->isIntegerTy())
@@ -103,7 +103,7 @@ void MakeIR::irFuncDefAST(FuncDefAST *node, Module *module, symtab *symtable)
                 if (symtable->find(addrname) == nullptr)
                 {
                     auto temp = paramty.dims[i];
-                    temp[0] = 1000000; ///
+                    temp[0] = std::nullopt; ///
                     symtable->set_both(addrname, func->getArg(i), temp);
                 }
             }
@@ -115,7 +115,7 @@ void MakeIR::irFuncDefAST(FuncDefAST *node, Module *module, symtab *symtable)
 param_list MakeIR::irFuncFParamsAST(FuncFParamsAST *node, Module *module, symtab *symtable)
 {
     std::cout << "debug:irFuncFParamsAST" << std::endl;
-    std::vector<std::vector<int>> dims;
+    std::vector<std::vector<std::optional<std::size_t>>> dims;
     std::vector<Type *> types;
     std::vector<std::string> names;
 
@@ -137,7 +137,7 @@ param_list MakeIR::irFuncFParamsAST(FuncFParamsAST *node, Module *module, symtab
 param_info *MakeIR::irFuncFParamAST(FuncFParamAST *node, Module *module, symtab *symtable)
 {
     std::cout << "debug:irFuncFParamAST" << std::endl;
-    std::vector<int> dim;
+    std::vector<std::optional<std::size_t>> dim;
     if (node->unit)
         dim = irConstUnitAST(dc(ConstUnitAST, node->unit), module, symtable);
     if (!node->unit && node->type != 0)
@@ -164,12 +164,12 @@ void MakeIR::irVarDefAST(VarDefAST *node, Module *module, BasicBlock *bb, symtab
     std::cout << "debug:irVarDefAST" << std::endl;
     auto ty = typehandler("int");
     int nums = 1;
-    std::vector<int> units;
+    std::vector<std::optional<std::size_t>> units;
     if (node->unit)
     {
         units = irConstUnitAST(dc(ConstUnitAST, node->unit), module, symtable);
         for (auto i : units)
-            nums *= i; // 计算数组大小
+            nums *= i.value(); // 计算数组大小
     }
     if (node->isgloble)
     {
@@ -203,10 +203,10 @@ void MakeIR::irVarDefAST(VarDefAST *node, Module *module, BasicBlock *bb, symtab
     }
 }
 
-std::vector<int> MakeIR::irConstUnitAST(ConstUnitAST *node, Module *module, symtab *symtable)
+std::vector<std::optional<std::size_t>> MakeIR::irConstUnitAST(ConstUnitAST *node, Module *module, symtab *symtable)
 {
     std::cout << "debug:irConstUnitAST" << std::endl;
-    std::vector<int> res;
+    std::vector<std::optional<std::size_t>>res;
     res.push_back(node->int_const);
     if (node->unit)
     {
@@ -635,7 +635,7 @@ std::vector<Value *> MakeIR::irLvalUnitAST(LvalUnitAST *node, Module *module, Ba
     return res;
 }
 
-std::vector<std::optional<std::size_t>> get_bounds(std::vector<int> dims)
+std::vector<std::optional<std::size_t>> get_bounds(std::vector<std::optional<std::size_t>> dims)
 {
     std::vector<std::optional<std::size_t>> res;
     for (auto i : dims)
