@@ -81,13 +81,14 @@ void MakeIR::irFuncDefAST(FuncDefAST *node, Module *module, symtab *symtable)
             auto addrname = paramty.names[i] + ".addr";
 
             // alloca and store param
-            int size = 1;
-            for (auto j : paramty.dims[i])
-                size *= j.value(); // size of this param
+            
 
 
             if (paramty.types[i]->isIntegerTy())
             {
+                int size = 1;
+                for (auto j : paramty.dims[i])
+                    size *= j.value(); // size of this param
                 func->getArg(i)->setName(paramty.names[i]);
                 auto inst = AllocaInst::Create(paramty.types[i], size, bb);
 
@@ -255,8 +256,7 @@ BasicBlock *MakeIR::irStmtAST(StmtAST *node, Module *module, BasicBlock *bb, sym
         if (lval.second.size() != 0)
         {
             auto addrname = std::string(lval.first->getName());
-            auto vec = symtable->find_dims(addrname);
-            auto bound = get_bounds(vec);
+            auto bound = symtable->find_dims(addrname);
             auto offset = OffsetInst::Create(Type::getIntegerTy(), lval.first, lval.second, bound, bb);
             auto store = StoreInst::Create(exp, offset, bb);
         }
@@ -581,23 +581,23 @@ Value *MakeIR::irPrimaryExpAST(PrimaryExpAST *node, Module *module, BasicBlock *
     else if (node->lval)
     {
         auto lval = irLvalAST(dc(LvalAST, node->lval), module, bb, symtable);
-        if (lval.second.size() == get_bounds(symtable->find_dims(std::string(lval.first->getName()))).size() && lval.second.size() != 0)
+        if (lval.second.size() == symtable->find_dims(std::string(lval.first->getName())).size() && lval.second.size() != 0)
         {
-            auto bound = get_bounds(symtable->find_dims(std::string(lval.first->getName())));
+            auto bound = symtable->find_dims(std::string(lval.first->getName()));
 
             auto offset = OffsetInst::Create(Type::getIntegerTy(), lval.first, lval.second, bound, bb);
             auto load = LoadInst::Create(offset, bb);
             return load;
         }
 
-        else if (lval.second.size() < get_bounds(symtable->find_dims(std::string(lval.first->getName()))).size())
+        else if (lval.second.size() < symtable->find_dims(std::string(lval.first->getName())).size())
         {
             if (lval.second.size() == 0)
             {
                 return lval.first;
             }
 
-            auto bound = get_bounds(symtable->find_dims(std::string(lval.first->getName())));
+            auto bound = symtable->find_dims(std::string(lval.first->getName()));
             if (bound.size() > lval.second.size())
             {
                 for (int i = 0; i < bound.size() - lval.second.size(); i++)
@@ -632,18 +632,5 @@ std::vector<Value *> MakeIR::irLvalUnitAST(LvalUnitAST *node, Module *module, Ba
         res.insert(res.begin(), tmp.begin(), tmp.end());
     }
     res.push_back(exp);
-    return res;
-}
-
-std::vector<std::optional<std::size_t>> get_bounds(std::vector<std::optional<std::size_t>> dims)
-{
-    std::vector<std::optional<std::size_t>> res;
-    for (auto i : dims)
-    {
-        if (i == -1)
-            res.push_back(std::nullopt);
-        else
-            res.push_back(i);
-    }
     return res;
 }

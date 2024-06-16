@@ -90,7 +90,6 @@ public:
     bool is_set = 0;
     global_info(std::vector<Value*> global_vars, std::vector<Value*> global_vals,std::vector<std::vector<std::optional<std::size_t>>> global_dims) : global_vars(global_vars), global_vals(global_vals),global_dims(global_dims) {}
 };
-std::vector<std::optional<std::size_t>> get_bounds(std::vector<std::optional<std::size_t>> dims);
 
 class MakeIR{
     public:
